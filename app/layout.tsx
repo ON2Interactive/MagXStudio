@@ -19,21 +19,39 @@ const resolveMetadataBase = (): URL => {
 export const metadata: Metadata = {
   metadataBase: resolveMetadataBase(),
   title: {
-    default: "MagXStudio",
+    default: "MagXStudio — Design Sites, Slides, Pages & AI Visuals in One Studio",
     template: "%s | MagXStudio"
   },
-  icons: {
-    icon: [{ url: "/icon", type: "image/png" }],
-    apple: [{ url: "/apple-icon", type: "image/png" }]
-  },
   description:
-    "Design posters, magazines, and layouts with an intuitive canvas and AI-powered creative tools.",
+    "MagXStudio is the all-in-one browser-based creative studio for generating websites, building presentation decks, designing multi-page publications, and creating AI-powered visuals — all in one place.",
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    apple: [{ url: "/favicon.png", type: "image/png" }],
+    shortcut: "/favicon.png",
+  },
   openGraph: {
-    title: "MagXStudio — The Future of Publication Design",
+    title: "MagXStudio — Design Sites, Slides, Pages & AI Visuals in One Studio",
     description:
-      "Modern publication design meets AI core technology.",
-    type: "website"
-  }
+      "The all-in-one browser-based creative studio. Generate websites, build decks, design publications, and create AI visuals — no installs, no switching tools.",
+    type: "website",
+    url: "https://magxstudio.com",
+    siteName: "MagXStudio",
+    images: [
+      {
+        url: "/share.png",
+        width: 1200,
+        height: 630,
+        alt: "MagXStudio — One Studio for Site Design, Slides, Pages, and AI Visuals",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MagXStudio — Design Sites, Slides, Pages & AI Visuals in One Studio",
+    description:
+      "The all-in-one browser-based creative studio. Generate websites, build decks, design publications, and create AI visuals.",
+    images: ["/share.png"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
