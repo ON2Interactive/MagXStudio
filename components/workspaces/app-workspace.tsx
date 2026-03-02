@@ -51,6 +51,7 @@ import type {
   VisualAspectRatio
 } from "@/lib/types";
 import { replaceReferenceTokens } from "@/lib/gemini";
+import { usePagesLocalDraft } from "@/lib/hooks/use-pages-draft";
 
 type WorkspaceKind = "websites" | "slides" | "pages" | "visuals";
 type VisualMode = "text-to-image" | "image-to-image";
@@ -848,6 +849,8 @@ export function AppWorkspace({
   const isSlidesWorkspace = kind === "slides";
   const isPagesWorkspace = kind === "pages";
   const isMagXStudioWorkspace = kind === "slides" || kind === "pages";
+  const pagesDraft = usePagesLocalDraft();
+  const [draftRestoredAt, setDraftRestoredAt] = useState<number | null>(null);
   const [values, setValues] = useState<PromptFormValues>(initialByWorkspace[kind]);
   const [site, setSite] = useState<GeneratedSiteContract | null>(null);
   const [referenceImages, setReferenceImages] = useState<ReferenceImageInput[]>([]);
@@ -1152,6 +1155,29 @@ export function AppWorkspace({
     previousSnapshotRef.current = { site, activePage };
     previousSnapshotSignatureRef.current = nextSiteSignature;
   }, [site, activePage]);
+
+  // Pages draft — restore on mount
+  useEffect(() => {
+    if (!isPagesWorkspace) return;
+    const saved = pagesDraft.loadDraft();
+    if (!saved) return;
+    historySkipNextCommitRef.current = true;
+    setSite(saved.site);
+    setActivePage(saved.activePage);
+    setCanvasColor(saved.canvasColor);
+    setPagesCanvasSize(saved.pagesCanvasSize);
+    setDraftRestoredAt(saved.savedAt);
+    // Auto-dismiss the banner after 6 seconds
+    const timer = setTimeout(() => setDraftRestoredAt(null), 6000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pages draft — auto-save on site change (debounced 1.5s)
+  useEffect(() => {
+    if (!isPagesWorkspace || !site) return;
+    pagesDraft.saveDraft({ site, activePage, canvasColor, pagesCanvasSize });
+  }, [site, activePage, canvasColor, pagesCanvasSize, isPagesWorkspace]);
 
   const addReferenceImages = (nextImages: ReferenceImageInput[]) => {
     setReferenceImages((existing) => [...existing, ...nextImages].slice(0, 14));
@@ -5500,6 +5526,7 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
     setReferenceImages([]);
     setActivePage("landing");
     if (isMagXStudioWorkspace) setShowSlidesPromptModal(false);
+    if (isPagesWorkspace) pagesDraft.clearDraft();
   };
 
   const createNewCanvas = () => {
@@ -5507,6 +5534,7 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
     setSite(null);
     setActivePage("landing");
     setShowSlidesPromptModal(false);
+    if (isPagesWorkspace) pagesDraft.clearDraft();
   };
 
   const openPreviewInNewTab = () => {
@@ -5945,6 +5973,33 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
 
   return (
     <section className={active ? "block" : "hidden"}>
+      {isPagesWorkspace && draftRestoredAt !== null && (
+        <div
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-4 rounded-full border border-white/10 bg-[#0e0e0e]/90 px-5 py-2 text-xs text-white/70 shadow-xl backdrop-blur-md"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="font-mono">
+            Draft restored &mdash;{" "}
+            {Math.max(1, Math.round((Date.now() - draftRestoredAt) / 60000)) < 2
+              ? "just now"
+              : `${Math.round((Date.now() - draftRestoredAt) / 60000)}m ago`}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              pagesDraft.clearDraft();
+              setSite(null);
+              setActivePage("landing");
+              setDraftRestoredAt(null);
+            }}
+            className="text-white/40 underline underline-offset-2 transition hover:text-white/90"
+          >
+            Discard
+          </button>
+        </div>
+      )}
+
       <div className="flex h-11 w-full items-center justify-end border-b border-black/70 bg-[#0b0b0b] px-5 md:px-7">
         <div className="flex items-center gap-4">
           {isSlidesWorkspace ? (
