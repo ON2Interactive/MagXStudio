@@ -1,0 +1,438 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Download, Eye, Image as ImageIcon, Plus } from "lucide-react";
+import { PreviewTabs, buildPreviewSrcDoc } from "@/components/generator/preview-tabs";
+import { PromptForm, type PromptFormValues } from "@/components/generator/prompt-form";
+import { Card } from "@/components/ui/card";
+import type { GeneratedSiteContract, PageKey, ReferenceImageInput } from "@/lib/types";
+
+type WorkspaceKind = "websites" | "slides" | "third";
+
+const initialByWorkspace: Record<WorkspaceKind, PromptFormValues> = {
+  websites: {
+    userPrompt:
+      "Build a polished B2B SaaS website for an AI operations platform with calm confidence, clear value props, and conversion-focused layout.",
+    brandName: "",
+    industry: ""
+  },
+  slides: {
+    userPrompt:
+      "Create a sharp 10-slide investor narrative with a modern visual style, confident typography, and clear story flow.",
+    brandName: "",
+    industry: ""
+  },
+  third: {
+    userPrompt:
+      "Generate a modern product experience concept with clean structure, clear hierarchy, and premium visual tone.",
+    brandName: "",
+    industry: ""
+  }
+};
+
+function toSlug(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
+function findPageImage(site: GeneratedSiteContract, pageKey: PageKey): string {
+  const fromPage = site.pages[pageKey].previewImage;
+  if (fromPage && /^https?:\/\//.test(fromPage)) return fromPage;
+
+  const pageIndex = Object.keys(site.pages).findIndex((key) => key === pageKey);
+  const fromAssets = site.assets?.heroImageSuggestions?.[
+    pageIndex % (site.assets?.heroImageSuggestions?.length || 1)
+  ];
+  if (fromAssets && /^https?:\/\//.test(fromAssets)) return fromAssets;
+
+  const mood = (site.assets?.imageMoodKeywords || ["modern", "editorial", "layout"]).join("-");
+  return `https://picsum.photos/seed/${toSlug(`${pageKey}-${mood}`)}/640/420`;
+}
+
+type AppWorkspaceProps = {
+  kind: WorkspaceKind;
+  userName: string;
+  active: boolean;
+  incomingReferenceImage?: ReferenceImageInput | null;
+  incomingReferenceImageVersion?: number;
+};
+
+export function AppWorkspace({
+  kind,
+  userName,
+  active,
+  incomingReferenceImage,
+  incomingReferenceImageVersion
+}: AppWorkspaceProps) {
+  const [values, setValues] = useState<PromptFormValues>(initialByWorkspace[kind]);
+  const [site, setSite] = useState<GeneratedSiteContract | null>(null);
+  const [referenceImages, setReferenceImages] = useState<ReferenceImageInput[]>([]);
+  const [activePage, setActivePage] = useState<PageKey>("landing");
+  const [selectedPreviewImage, setSelectedPreviewImage] = useState<{ route: string; src: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const canvasUploadInputRef = useRef<HTMLInputElement | null>(null);
+
+  const pagesPreview = useMemo(() => {
+    if (!site) return [];
+    return Object.entries(site.pages).map(([key, page]) => ({
+      key,
+      label: key.charAt(0).toUpperCase() + key.slice(1),
+      image: findPageImage(site, key),
+      title: page.seo.title
+    }));
+  }, [site]);
+
+  const addReferenceImages = (nextImages: ReferenceImageInput[]) => {
+    setReferenceImages((existing) => [...existing, ...nextImages].slice(0, 4));
+  };
+
+  useEffect(() => {
+    if (kind !== "websites") return;
+    if (!incomingReferenceImage) return;
+    addReferenceImages([incomingReferenceImage]);
+  }, [kind, incomingReferenceImage, incomingReferenceImageVersion]);
+
+  const replaceFirst = (source: string, search: string, replacement: string): string => {
+    const index = source.indexOf(search);
+    if (index < 0) return source;
+    return `${source.slice(0, index)}${replacement}${source.slice(index + search.length)}`;
+  };
+
+  const replaceSelectedText = (
+    route: string,
+    previousText: string,
+    nextText: string,
+    path?: number[]
+  ) => {
+    if (!site || !previousText.trim() || !nextText.trim() || previousText === nextText) return;
+    const nextPages = { ...site.pages };
+    const targetEntry =
+      Object.entries(nextPages).find(([, page]) => page.route === route) ??
+      Object.entries(nextPages).find(([key]) => key === activePage);
+    if (!targetEntry) return;
+    const [targetKey, targetPage] = targetEntry;
+    let updatedHtml = targetPage.html;
+
+    if (Array.isArray(path) && path.length > 0) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(
+        `<div id="__preview_root__">${targetPage.html}</div>`,
+        "text/html"
+      );
+      const root = doc.getElementById("__preview_root__");
+      let current: Element | null = root;
+      for (const index of path) {
+        if (!current || index < 0 || index >= current.children.length) {
+          current = null;
+          break;
+        }
+        current = current.children[index] ?? null;
+      }
+      if (current) {
+        current.textContent = nextText;
+        updatedHtml = root?.innerHTML ?? targetPage.html;
+      }
+    }
+
+    if (updatedHtml === targetPage.html) {
+      updatedHtml = replaceFirst(targetPage.html, previousText, nextText);
+    }
+    if (updatedHtml === targetPage.html) return;
+    nextPages[targetKey] = {
+      ...targetPage,
+      html: updatedHtml
+    };
+    setSite({
+      ...site,
+      pages: nextPages
+    });
+  };
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      const data = event.data as
+        | {
+            type?: string;
+            workspaceId?: string;
+            route?: string;
+            src?: string;
+            text?: string;
+            path?: number[];
+          }
+        | undefined;
+      if (!data) return;
+      if (data.workspaceId !== kind) return;
+      if (data.type === "preview-image-selected") {
+        const src = data.src ?? "";
+        if (!src) return;
+        setSelectedPreviewImage({ route: data.route ?? "/", src });
+        canvasUploadInputRef.current?.click();
+        return;
+      }
+      if (data.type === "preview-text-selected") {
+        const original = (data.text ?? "").trim();
+        if (!original) return;
+        const edited = window.prompt("Edit text", original);
+        if (edited == null) return;
+        const nextText = edited.trim();
+        if (!nextText) return;
+        replaceSelectedText(data.route ?? "/", original, nextText, data.path);
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [kind, site, activePage]);
+
+  const replaceSelectedImage = async (file: File) => {
+    if (!site || !selectedPreviewImage) return;
+    const readDataUrl = () =>
+      new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result ?? ""));
+        reader.onerror = () => reject(new Error("Failed to read replacement image"));
+        reader.readAsDataURL(file);
+      });
+
+    const dataUrl = await readDataUrl();
+    if (!dataUrl) return;
+
+    const nextPages = { ...site.pages };
+    const targetEntry =
+      Object.entries(nextPages).find(([, page]) => page.route === selectedPreviewImage.route) ??
+      Object.entries(nextPages).find(([key]) => key === activePage);
+
+    if (targetEntry) {
+      const [targetKey, targetPage] = targetEntry;
+      nextPages[targetKey] = {
+        ...targetPage,
+        html: targetPage.html.split(selectedPreviewImage.src).join(dataUrl),
+        css: targetPage.css.split(selectedPreviewImage.src).join(dataUrl),
+        previewImage:
+          targetPage.previewImage === selectedPreviewImage.src ? dataUrl : targetPage.previewImage
+      };
+      setSite({
+        ...site,
+        pages: nextPages
+      });
+    }
+
+    setSelectedPreviewImage(null);
+    if (canvasUploadInputRef.current) {
+      canvasUploadInputRef.current.value = "";
+    }
+  };
+
+  const generate = async () => {
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/generate-site", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...values,
+          referenceImages,
+          currentSite: site ?? undefined,
+          pages: site ? Object.keys(site.pages) : ["landing"],
+          inspiration: { enabled: true, maxSites: 6 }
+        })
+      });
+
+      const json = (await response.json()) as {
+        error?: string;
+        details?: string;
+        data?: GeneratedSiteContract;
+      };
+
+      if (!response.ok || !json.data) {
+        throw new Error([json.error || "Generation failed", json.details].filter(Boolean).join(": "));
+      }
+
+      setSite(json.data);
+      const nextActivePage = Object.keys(json.data.pages)[0] ?? "landing";
+      setActivePage(nextActivePage);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unknown generation error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportZip = async () => {
+    if (!site) return;
+
+    setExporting(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/export-site", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ generatedSite: site })
+      });
+
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error || "Export failed");
+      }
+
+      const blob = await response.blob();
+      const href = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = href;
+      anchor.download = `${kind}-generated.zip`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(href);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unknown export error");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const resetWorkspace = () => {
+    setError(null);
+    setSite(null);
+    setReferenceImages([]);
+    setActivePage("landing");
+  };
+
+  const openPreviewInNewTab = () => {
+    if (!site) return;
+    const page = site.pages[activePage];
+    if (!page) return;
+    const previewWindow = window.open("", "_blank");
+    if (!previewWindow) return;
+    previewWindow.opener = null;
+    previewWindow.document.open();
+    previewWindow.document.write(buildPreviewSrcDoc(page, site, kind, true));
+    previewWindow.document.close();
+  };
+
+  return (
+    <section className={active ? "block" : "hidden"}>
+      <div className="flex h-11 w-full items-center justify-end border-b border-black/70 bg-[#0b0b0b] px-5 md:px-7">
+        <div className="flex items-center gap-4">
+          <button
+            aria-label="Start over"
+            title="Start over"
+            onClick={resetWorkspace}
+            className="inline-flex h-5 w-5 items-center justify-center text-white/75 transition hover:text-white"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+          <button
+            aria-label="Open preview in new tab"
+            title="Open preview in new tab"
+            onClick={openPreviewInNewTab}
+            disabled={!site}
+            className="inline-flex h-5 w-5 items-center justify-center text-white/75 transition hover:text-white disabled:opacity-35"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+          <button
+            aria-label="Export zip"
+            title="Export zip"
+            onClick={exportZip}
+            disabled={!site || exporting}
+            className="inline-flex h-5 w-5 items-center justify-center text-white/75 transition hover:text-white disabled:opacity-35"
+          >
+            <Download className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="px-5 pb-6 pt-5 md:px-7">
+        <input
+          ref={canvasUploadInputRef}
+          type="file"
+          accept="image/*"
+          hidden
+          style={{ display: "none" }}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            void replaceSelectedImage(file);
+          }}
+        />
+        {error ? (
+          <div className="mb-4 border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-100">{error}</div>
+        ) : null}
+
+        {!site ? (
+          <div className="flex min-h-[calc(100vh-180px)] items-center">
+            <div className="mx-auto w-full max-w-[960px]">
+              <p className="mb-5 text-center text-[24px] leading-tight text-white/75">Hello ({userName})</p>
+              <Card className="p-4 md:p-5">
+                <PromptForm
+                  values={values}
+                  onChange={setValues}
+                  onSubmit={generate}
+                  onAddImages={addReferenceImages}
+                  imageCount={referenceImages.length}
+                  loading={loading}
+                />
+              </Card>
+            </div>
+          </div>
+        ) : (
+          <div className="grid min-h-[80vh] grid-cols-1 gap-4 lg:grid-cols-[320px_1fr_250px]">
+            <div className="flex h-full items-end">
+              <Card className="w-full p-4">
+              <PromptForm
+                values={values}
+                onChange={setValues}
+                onSubmit={generate}
+                onAddImages={addReferenceImages}
+                imageCount={referenceImages.length}
+                loading={loading}
+              />
+              </Card>
+            </div>
+
+            <Card className="overflow-hidden p-0">
+              <PreviewTabs site={site} activePage={activePage} workspaceId={kind} />
+            </Card>
+
+            <Card className="space-y-2 p-4">
+              <ul className="space-y-2">
+                {pagesPreview.map((page) => (
+                  <li
+                    key={page.key}
+                    className={`cursor-pointer p-2 transition ${activePage === page.key ? "bg-white/10" : "bg-white/0"}`}
+                    onClick={() => setActivePage(page.key)}
+                  >
+                    <div className="relative mb-2 overflow-hidden">
+                      <img
+                        src={page.image}
+                        alt={page.label}
+                        className="h-20 w-full object-cover"
+                        loading="lazy"
+                        onError={(event) => {
+                          const image = event.currentTarget;
+                          if (image.dataset.fallbackApplied === "true") return;
+                          image.dataset.fallbackApplied = "true";
+                          image.src = `https://picsum.photos/seed/${page.key}-thumb/640/420`;
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs font-medium">
+                      <ImageIcon className="mr-1 inline h-3 w-3" />
+                      {page.label}
+                    </p>
+                    <p className="line-clamp-2 text-[10px] text-white/55">{page.title}</p>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

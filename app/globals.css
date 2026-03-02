@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-obsidian: #0d0d12;
+  --color-champagne: #c9a84c;
+  --color-ivory: #faf8f5;
+  --color-slate: #2a2a35;
+
+  --color-bg: var(--color-obsidian);
+  --color-surface: #16161a;
+  --color-text: var(--color-ivory);
+  --color-muted: #8e9196;
+  --color-accent: var(--color-champagne);
+
+  --radius-pill: 9999px;
+  --radius-xl: 2.5rem;
+  --radius-2xl: 3rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  background-color: var(--color-obsidian);
+  color: var(--color-text);
+  scroll-behavior: smooth;
+}
+
+
+
+.tight-tracking {
+  letter-spacing: -0.04em;
+}
+
+.drama-serif {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+}
+
+.mono-data {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Utilities */
+.glass-island {
+  background: rgba(13, 13, 18, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.magnetic-button {
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.magnetic-button:hover {
+  transform: scale(1.03);
+}

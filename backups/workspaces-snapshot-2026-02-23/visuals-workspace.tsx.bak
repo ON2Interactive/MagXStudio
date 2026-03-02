@@ -1,0 +1,367 @@
+"use client";
+
+import { useMemo, useRef, useState } from "react";
+import { ArrowUp, ImagePlus, Plus } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import type { ReferenceImageInput } from "@/lib/types";
+
+type VisualsWorkspaceProps = {
+  active: boolean;
+  onSendToSiteDesign: (image: ReferenceImageInput) => void;
+};
+
+type VisualMode = "text-to-image" | "image-to-image";
+
+type VisualAsset = {
+  id: string;
+  previewSrc: string;
+  referenceImage: ReferenceImageInput;
+  label: string;
+};
+
+function stringToSeed(value: string): number {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+  return hash || 1;
+}
+
+function colorFromSeed(seed: number): string {
+  const hue = seed % 360;
+  return `hsl(${hue} 24% 18%)`;
+}
+
+function accentFromSeed(seed: number): string {
+  const hue = (seed * 7) % 360;
+  return `hsl(${hue} 70% 72%)`;
+}
+
+function encodeSvgToDataUri(svg: string): string {
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+}
+
+function buildGeneratedSvgDataUri(prompt: string, variant: number): string {
+  const seed = stringToSeed(`${prompt}-${variant}`);
+  const bgA = colorFromSeed(seed);
+  const bgB = colorFromSeed(seed + 57);
+  const accent = accentFromSeed(seed);
+  const safePrompt = prompt.replace(/[<>&"]/g, "").slice(0, 72);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+<defs>
+<linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="${bgA}" />
+<stop offset="100%" stop-color="${bgB}" />
+</linearGradient>
+</defs>
+<rect width="1400" height="900" fill="url(#g)" />
+<circle cx="${230 + variant * 180}" cy="${240 + variant * 84}" r="${280 + variant * 18}" fill="${accent}" opacity="0.23" />
+<circle cx="${1120 - variant * 120}" cy="${660 - variant * 70}" r="${340 - variant * 26}" fill="#ffffff" opacity="0.09" />
+<text x="80" y="820" fill="#f5f7fb" font-size="34" font-family="Inter, Arial, sans-serif" opacity="0.84">${safePrompt}</text>
+</svg>`;
+  return encodeSvgToDataUri(svg);
+}
+
+function dataUriToReferenceImage(dataUri: string, name: string): ReferenceImageInput {
+  const [meta, data = ""] = dataUri.split(",");
+  const mimeType = meta.match(/data:(.*?);base64/)?.[1] ?? "image/png";
+  return {
+    name,
+    mimeType,
+    data
+  };
+}
+
+export function VisualsWorkspace({ active, onSendToSiteDesign }: VisualsWorkspaceProps) {
+  const [mode, setMode] = useState<VisualMode>("text-to-image");
+  const [prompt, setPrompt] = useState(
+    "High-end monochrome hero visual with subtle gradients, soft glow, and premium editorial composition."
+  );
+  const [sourceImage, setSourceImage] = useState<VisualAsset | null>(null);
+  const [assets, setAssets] = useState<VisualAsset[]>([]);
+  const [loading, setLoading] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const canGenerate = useMemo(() => {
+    if (loading) return false;
+    if (mode === "text-to-image") return prompt.trim().length >= 8;
+    return prompt.trim().length >= 8 && Boolean(sourceImage);
+  }, [loading, mode, prompt, sourceImage]);
+
+  const resetWorkspace = () => {
+    setAssets([]);
+    setSourceImage(null);
+    setPrompt(
+      "High-end monochrome hero visual with subtle gradients, soft glow, and premium editorial composition."
+    );
+    setMode("text-to-image");
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const generateAssets = async () => {
+    if (!canGenerate) return;
+    setLoading(true);
+    try {
+      const timestamp = Date.now();
+      const next: VisualAsset[] = [];
+
+      if (mode === "text-to-image") {
+        for (let index = 0; index < 4; index += 1) {
+          const dataUri = buildGeneratedSvgDataUri(prompt, index);
+          next.push({
+            id: `text-${timestamp}-${index}`,
+            previewSrc: dataUri,
+            referenceImage: dataUriToReferenceImage(dataUri, `visual-${index + 1}.svg`),
+            label: `Generated ${index + 1}`
+          });
+        }
+      } else if (sourceImage) {
+        next.push({
+          ...sourceImage,
+          id: `source-${timestamp}`
+        });
+        for (let index = 0; index < 3; index += 1) {
+          const dataUri = buildGeneratedSvgDataUri(`${prompt} variation`, index + 1);
+          next.push({
+            id: `img2img-${timestamp}-${index}`,
+            previewSrc: dataUri,
+            referenceImage: dataUriToReferenceImage(dataUri, `variation-${index + 1}.svg`),
+            label: `Variation ${index + 1}`
+          });
+        }
+      }
+
+      setAssets(next);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSourceUpload = async (file: File | null) => {
+    if (!file) return;
+    const dataUri = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("Failed to read source image"));
+      reader.readAsDataURL(file);
+    });
+    setSourceImage({
+      id: `source-${Date.now()}`,
+      previewSrc: dataUri,
+      referenceImage: dataUriToReferenceImage(dataUri, file.name || "source-image"),
+      label: "Source"
+    });
+  };
+
+  return (
+    <section className={active ? "block" : "hidden"}>
+      <div className="flex h-11 w-full items-center justify-end border-b border-black/70 bg-[#0b0b0b] px-5 md:px-7">
+        <button
+          aria-label="Reset visuals"
+          title="Reset visuals"
+          onClick={resetWorkspace}
+          className="inline-flex h-5 w-5 items-center justify-center text-white/75 transition hover:text-white"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="px-5 pb-6 pt-5 md:px-7">
+        {assets.length === 0 ? (
+          <div className="flex min-h-[calc(100vh-180px)] items-center">
+            <div className="mx-auto w-full max-w-[960px]">
+              <Card className="w-full p-4 md:p-5">
+                <div className="mb-4 flex items-center gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setMode("text-to-image")}
+                    className={`px-0 py-1 transition ${
+                      mode === "text-to-image" ? "text-white" : "text-white/50 hover:text-white/80"
+                    }`}
+                  >
+                    Text to Image
+                  </button>
+                  <span className="text-white/30">|</span>
+                  <button
+                    type="button"
+                    onClick={() => setMode("image-to-image")}
+                    className={`px-0 py-1 transition ${
+                      mode === "image-to-image" ? "text-white" : "text-white/50 hover:text-white/80"
+                    }`}
+                  >
+                    Image to Image
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <Textarea
+                    rows={4}
+                    className="min-h-[120px] py-2 leading-5"
+                    placeholder="Describe the visual direction..."
+                    value={prompt}
+                    onChange={(event) => setPrompt(event.target.value)}
+                  />
+
+                  {mode === "image-to-image" ? (
+                    <div className="space-y-2">
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        style={{ display: "none" }}
+                        onChange={(event) => {
+                          void handleSourceUpload(event.target.files?.[0] ?? null);
+                        }}
+                      />
+                      {sourceImage ? (
+                        <img src={sourceImage.previewSrc} alt="Source visual" className="h-24 w-full object-cover" />
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <div className="flex items-center justify-end gap-2">
+                    {mode === "image-to-image" ? (
+                      <button
+                        type="button"
+                        aria-label="Upload source image"
+                        title="Upload source image"
+                        onClick={() => {
+                          fileRef.current?.click();
+                        }}
+                        className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[#d4d9e2] transition hover:bg-[#262b36]"
+                        style={{ backgroundColor: "#1f232d" }}
+                      >
+                        <Plus className="h-[22px] w-[22px] stroke-[2.25]" />
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      aria-label="Generate visuals"
+                      title="Generate visuals"
+                      onClick={() => {
+                        void generateAssets();
+                      }}
+                      disabled={!canGenerate}
+                      className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[#111111] transition hover:bg-[#f7f8fa] disabled:text-[#5a606d] disabled:opacity-100"
+                      style={{ backgroundColor: canGenerate ? "#eef1f5" : "#d8dde5" }}
+                    >
+                      <ArrowUp className={`h-[25px] w-[25px] stroke-[2.5] ${loading ? "animate-pulse" : ""}`} />
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        ) : (
+          <div className="grid min-h-[80vh] grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
+            <Card className="w-full p-4">
+              <div className="mb-4 flex items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setMode("text-to-image")}
+                  className={`px-0 py-1 transition ${
+                    mode === "text-to-image" ? "text-white" : "text-white/50 hover:text-white/80"
+                  }`}
+                >
+                  Text to Image
+                </button>
+                <span className="text-white/30">|</span>
+                <button
+                  type="button"
+                  onClick={() => setMode("image-to-image")}
+                  className={`px-0 py-1 transition ${
+                    mode === "image-to-image" ? "text-white" : "text-white/50 hover:text-white/80"
+                  }`}
+                >
+                  Image to Image
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <Textarea
+                  rows={4}
+                  className="min-h-[120px] py-2 leading-5"
+                  placeholder="Describe the visual direction..."
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                />
+
+                {mode === "image-to-image" ? (
+                  <div className="space-y-2">
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      style={{ display: "none" }}
+                      onChange={(event) => {
+                        void handleSourceUpload(event.target.files?.[0] ?? null);
+                      }}
+                    />
+                    {sourceImage ? (
+                      <img src={sourceImage.previewSrc} alt="Source visual" className="h-24 w-full object-cover" />
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <div className="flex items-center justify-end gap-2">
+                  {mode === "image-to-image" ? (
+                    <button
+                      type="button"
+                      aria-label="Upload source image"
+                      title="Upload source image"
+                      onClick={() => {
+                        fileRef.current?.click();
+                      }}
+                      className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[#d4d9e2] transition hover:bg-[#262b36]"
+                      style={{ backgroundColor: "#1f232d" }}
+                    >
+                      <Plus className="h-[22px] w-[22px] stroke-[2.25]" />
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    aria-label="Generate visuals"
+                    title="Generate visuals"
+                    onClick={() => {
+                      void generateAssets();
+                    }}
+                    disabled={!canGenerate}
+                    className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[#111111] transition hover:bg-[#f7f8fa] disabled:text-[#5a606d] disabled:opacity-100"
+                    style={{ backgroundColor: canGenerate ? "#eef1f5" : "#d8dde5" }}
+                  >
+                    <ArrowUp className={`h-[25px] w-[25px] stroke-[2.5] ${loading ? "animate-pulse" : ""}`} />
+                  </button>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {assets.map((asset) => (
+                  <article key={asset.id} className="bg-[#111214] p-2">
+                    <img src={asset.previewSrc} alt={asset.label} className="mb-2 h-40 w-full object-cover" />
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-xs text-white/75">{asset.label}</p>
+                      <button
+                        type="button"
+                        onClick={() => onSendToSiteDesign(asset.referenceImage)}
+                        className="inline-flex h-7 w-7 items-center justify-center text-white/70 transition hover:text-white"
+                        title="Send to Site Design"
+                        aria-label="Send to Site Design"
+                      >
+                        <ImagePlus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
