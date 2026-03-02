@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 
 const DRAFT_VERSION = 1;
-const DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 type DraftEnvelope<T> = {
     version: number;
