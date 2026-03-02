@@ -318,7 +318,33 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            {/* SESSION-BASED WORKFLOW SECTION */}
+            <section className="session-section bg-black py-40 px-6 md:px-20 border-t border-white/5">
+                <div className="max-w-4xl mx-auto">
+                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-12 tracking-tight">Session-Based Workflow</h2>
+
+                    <div className="space-y-8 text-sm md:text-base text-white/50 leading-relaxed font-medium">
+                        <p>
+                            Every workspace in MagXStudio saves your work automatically. Close the tab, step away for a day, come back after a weekend — your canvas, your layouts, your generated visuals are exactly where you left them. No save button. No export required before you close.
+                        </p>
+                        <p>
+                            The moment you make a change, it's captured. A 1.5-second auto-save runs silently in the background across all four workspaces — Site Design, Slides, Pages, and Visuals. Drafts are preserved for 7 days, surviving browser closes, refreshes, and system restarts without any action required on your part.
+                        </p>
+                        <p>
+                            When you return, your work is restored instantly. A brief banner confirms the restore. From there, continue immediately, or discard and start clean. A designer can start a layout Tuesday morning, step into meetings, and return Thursday to exactly the same canvas. A creator can generate a set of visuals, close the tab, and re-open to the same session days later.
+                        </p>
+                        <p className="text-white font-bold">
+                            Your session waits for you. Not the other way around.
+                        </p>
+                        <p>
+                            No cloud account required for draft persistence. Your workspace state is held locally and privately — available for a full week before expiring. Account-linked cloud saves for permanent, device-synced project storage are coming with the full account system.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
             {/* FREEHAND HISTORY SECTION */}
+
             <section className="history-section bg-black py-40 px-6 md:px-20 border-t border-white/5">
                 <div className="max-w-4xl mx-auto">
                     <h2 className="text-3xl md:text-4xl font-bold text-white mb-12 tracking-tight">Work in Parallel</h2>

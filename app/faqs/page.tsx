@@ -23,6 +23,10 @@ export default function FAQPage() {
             answer: "No. MagXStudio is entirely browser-based. Sign in, and your workspace is ready. Your projects and assets are stored in the cloud, so your work is accessible from any device without syncing, file transfers, or version conflicts."
         },
         {
+            question: "Does MagXStudio save my work automatically?",
+            answer: "Yes. Every workspace — Site Design, Slides, Pages, and Visuals — auto-saves your work as you go. There's no save button to remember. Drafts are preserved for 7 days, so closing a tab, refreshing the browser, or stepping away for a weekend won't result in lost work. When you return, your canvas is restored automatically. Account-linked cloud saves for permanent project storage are coming with the full account system."
+        },
+        {
             question: "How does pricing work?",
             answer: (
                 <>

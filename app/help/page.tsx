@@ -73,13 +73,15 @@ export default function HelpPage() {
             ]
         },
         {
-            title: "Projects and Sessions",
-            description: "Your projects are saved to your account and accessible from any device. Open the Library from the workspace to manage, rename, or create new projects.",
+            title: "Auto-Save & Sessions",
+            description: "MagXStudio automatically saves your work as you go — no manual save button required. Every workspace captures your canvas state in the background, so closing a tab, refreshing the browser, or stepping away for a few days never means losing your work.",
             items: [
-                "Name your project and save at any time",
-                "Open the Library panel to view all saved projects",
-                "Create a new project with the + button",
-                "Pick up any project from any device — no syncing required"
+                "All four workspaces — Site Design, Slides, Pages, and Visuals — auto-save every 1.5 seconds",
+                "Drafts persist for 7 days, surviving browser closes, refreshes, and system restarts",
+                "When you return, your canvas, layouts, visuals, and generated content restore automatically",
+                "A brief 'Draft restored' banner confirms your session has been picked up",
+                "Click Discard on the banner to clear a session and start with a clean workspace",
+                "Cloud saves for permanent, account-linked project storage are coming with the full account system"
             ]
         }
     ];
