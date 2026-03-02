@@ -5,6 +5,7 @@ import { ArrowUp, Download, Eye, SendHorizontal, Loader2, Plus, Wand2, Trash2 } 
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import type { ReferenceImageInput, VisualTheme, VisualAspectRatio } from "@/lib/types";
+import { useWorkspaceDraft } from "@/lib/hooks/use-workspace-draft";
 
 type VisualsWorkspaceProps = {
   active: boolean;
@@ -109,12 +110,49 @@ export function VisualsWorkspace({ active, userName, onSendToPages }: VisualsWor
   const [error, setError] = useState<string | null>(null);
   const [showValidation, setShowValidation] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const visualsDraft = useWorkspaceDraft<{
+    assets: VisualAsset[];
+    prompt: string;
+    theme: VisualTheme;
+    aspectRatio: VisualAspectRatio | "";
+    mode: VisualMode;
+  }>("magx-visuals-draft");
+  const [draftRestoredAt, setDraftRestoredAt] = useState<number | null>(null);
+
+  // Restore on mount
+  useEffect(() => {
+    const saved = visualsDraft.loadDraft();
+    if (!saved || !saved.data.assets.length) return;
+    // Strip transient UI state
+    setAssets(saved.data.assets.map((a) => ({ ...a, loading: false, showRemixInput: false })));
+    setPrompt(saved.data.prompt);
+    setTheme(saved.data.theme);
+    setAspectRatio(saved.data.aspectRatio);
+    setMode(saved.data.mode);
+    setDraftRestoredAt(saved.savedAt);
+    const timer = setTimeout(() => setDraftRestoredAt(null), 6000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-save when assets change (debounced 1.5s)
+  // base64 images can be large — QuotaExceededError is caught silently in the hook
+  useEffect(() => {
+    if (!assets.length) return;
+    const saveableAssets = assets.map(
+      ({ loading: _l, showRemixInput: _s, ...rest }) => rest as VisualAsset
+    );
+    visualsDraft.saveDraft({ assets: saveableAssets, prompt, theme, aspectRatio, mode });
+  }, [assets, prompt, theme, aspectRatio, mode]);
+
   const resetWorkspace = () => {
     setAssets([]);
     setSourceImage(null);
     setPrompt("");
     setMode("text-to-image");
     setShowValidation(false);
+    visualsDraft.clearDraft();
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -279,6 +317,32 @@ export function VisualsWorkspace({ active, userName, onSendToPages }: VisualsWor
 
   return (
     <section className={active ? "block" : "hidden"}>
+      {draftRestoredAt !== null && (
+        <div
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-4 rounded-full border border-white/10 bg-[#0e0e0e]/90 px-5 py-2 text-xs text-white/70 shadow-xl backdrop-blur-md"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="font-mono">
+            Draft restored &mdash;{" "}
+            {Math.round((Date.now() - draftRestoredAt) / 60000) < 2
+              ? "just now"
+              : `${Math.round((Date.now() - draftRestoredAt) / 60000)}m ago`}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              visualsDraft.clearDraft();
+              setAssets([]);
+              setDraftRestoredAt(null);
+            }}
+            className="text-white/40 underline underline-offset-2 transition hover:text-white/90"
+          >
+            Discard
+          </button>
+        </div>
+      )}
+
       <div className="flex h-11 w-full items-center justify-end border-b border-black/70 bg-[#0b0b0b] px-5 md:px-7">
         <div className="flex items-center gap-4">
           {assets.length > 0 && (

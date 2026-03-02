@@ -51,7 +51,7 @@ import type {
   VisualAspectRatio
 } from "@/lib/types";
 import { replaceReferenceTokens } from "@/lib/gemini";
-import { usePagesLocalDraft } from "@/lib/hooks/use-pages-draft";
+import { useWorkspaceDraft } from "@/lib/hooks/use-workspace-draft";
 
 type WorkspaceKind = "websites" | "slides" | "pages" | "visuals";
 type VisualMode = "text-to-image" | "image-to-image";
@@ -849,7 +849,14 @@ export function AppWorkspace({
   const isSlidesWorkspace = kind === "slides";
   const isPagesWorkspace = kind === "pages";
   const isMagXStudioWorkspace = kind === "slides" || kind === "pages";
-  const pagesDraft = usePagesLocalDraft();
+  const pagesDraft = useWorkspaceDraft<{
+    site: GeneratedSiteContract;
+    activePage: PageKey;
+    canvasColor?: string;
+    pagesCanvasSize?: PagesCanvasFormat;
+    slidesCanvasAspect?: SlidesCanvasFormat;
+    presentationDeckType?: PresentationDeckType;
+  }>(`magx-${kind}-draft`);
   const [draftRestoredAt, setDraftRestoredAt] = useState<number | null>(null);
   const [values, setValues] = useState<PromptFormValues>(initialByWorkspace[kind]);
   const [site, setSite] = useState<GeneratedSiteContract | null>(null);
@@ -1156,28 +1163,37 @@ export function AppWorkspace({
     previousSnapshotSignatureRef.current = nextSiteSignature;
   }, [site, activePage]);
 
-  // Pages draft — restore on mount
+  // Workspace draft — restore on mount
   useEffect(() => {
-    if (!isPagesWorkspace) return;
     const saved = pagesDraft.loadDraft();
     if (!saved) return;
     historySkipNextCommitRef.current = true;
-    setSite(saved.site);
-    setActivePage(saved.activePage);
-    setCanvasColor(saved.canvasColor);
-    setPagesCanvasSize(saved.pagesCanvasSize);
+    setSite(saved.data.site);
+    setActivePage(saved.data.activePage);
+    if (isPagesWorkspace) {
+      if (saved.data.canvasColor) setCanvasColor(saved.data.canvasColor);
+      if (saved.data.pagesCanvasSize) setPagesCanvasSize(saved.data.pagesCanvasSize);
+    }
+    if (isSlidesWorkspace) {
+      if (saved.data.slidesCanvasAspect) setSlidesCanvasAspect(saved.data.slidesCanvasAspect);
+      if (saved.data.presentationDeckType) setPresentationDeckType(saved.data.presentationDeckType);
+    }
     setDraftRestoredAt(saved.savedAt);
-    // Auto-dismiss the banner after 6 seconds
     const timer = setTimeout(() => setDraftRestoredAt(null), 6000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pages draft — auto-save on site change (debounced 1.5s)
+  // Workspace draft — auto-save on site change (debounced 1.5s)
   useEffect(() => {
-    if (!isPagesWorkspace || !site) return;
-    pagesDraft.saveDraft({ site, activePage, canvasColor, pagesCanvasSize });
-  }, [site, activePage, canvasColor, pagesCanvasSize, isPagesWorkspace]);
+    if (!site) return;
+    pagesDraft.saveDraft({
+      site,
+      activePage,
+      ...(isPagesWorkspace && { canvasColor, pagesCanvasSize }),
+      ...(isSlidesWorkspace && { slidesCanvasAspect, presentationDeckType }),
+    });
+  }, [site, activePage, canvasColor, pagesCanvasSize, slidesCanvasAspect, presentationDeckType]);
 
   const addReferenceImages = (nextImages: ReferenceImageInput[]) => {
     setReferenceImages((existing) => [...existing, ...nextImages].slice(0, 14));
@@ -5526,7 +5542,7 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
     setReferenceImages([]);
     setActivePage("landing");
     if (isMagXStudioWorkspace) setShowSlidesPromptModal(false);
-    if (isPagesWorkspace) pagesDraft.clearDraft();
+    pagesDraft.clearDraft();
   };
 
   const createNewCanvas = () => {
@@ -5534,7 +5550,7 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
     setSite(null);
     setActivePage("landing");
     setShowSlidesPromptModal(false);
-    if (isPagesWorkspace) pagesDraft.clearDraft();
+    pagesDraft.clearDraft();
   };
 
   const openPreviewInNewTab = () => {
@@ -5973,7 +5989,7 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
 
   return (
     <section className={active ? "block" : "hidden"}>
-      {isPagesWorkspace && draftRestoredAt !== null && (
+      {draftRestoredAt !== null && (
         <div
           className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-4 rounded-full border border-white/10 bg-[#0e0e0e]/90 px-5 py-2 text-xs text-white/70 shadow-xl backdrop-blur-md"
           role="status"
