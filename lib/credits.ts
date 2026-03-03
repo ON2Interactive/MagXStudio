@@ -1,7 +1,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 
-export async function checkCredits(): Promise<{ allowed: boolean; userId?: string; error?: string; isAdmin?: boolean }> {
+export async function checkCredits(minCredits: number = 1): Promise<{ allowed: boolean; userId?: string; error?: string; isAdmin?: boolean }> {
     const supabase = await createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -17,14 +17,14 @@ export async function checkCredits(): Promise<{ allowed: boolean; userId?: strin
     }
 
     const { data } = await supabase.from("users").select("credits").eq("id", user.id).single();
-    if (!data || typeof data.credits !== "number" || data.credits <= 0) {
+    if (!data || typeof data.credits !== "number" || data.credits < minCredits) {
         return { allowed: false, error: "Insufficient credits", userId: user.id, isAdmin };
     }
 
     return { allowed: true, userId: user.id, isAdmin };
 }
 
-export async function deductCredit(userId: string) {
+export async function deductCredit(userId: string, amount: number = 1) {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
         console.error("Missing SUPABASE credentials for deducting credits.");
         return;
@@ -38,10 +38,10 @@ export async function deductCredit(userId: string) {
     // Fetch current credits as service role
     const { data } = await serviceClient.from("users").select("credits").eq("id", userId).single();
 
-    if (data && typeof data.credits === "number" && data.credits > 0) {
+    if (data && typeof data.credits === "number" && data.credits >= amount) {
         await serviceClient
             .from("users")
-            .update({ credits: data.credits - 1 })
+            .update({ credits: data.credits - amount })
             .eq("id", userId);
     }
 }

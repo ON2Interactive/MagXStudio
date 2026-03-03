@@ -135,10 +135,37 @@ export async function POST(req: Request) {
                 const invoice = event.data.object as InvoiceWithSubscription;
                 const subscriptionId = invoice.subscription;
                 if (subscriptionId) {
+                    // Update subscription status
                     await supabase
                         .from("subscriptions")
                         .update({ status: "active", updated_at: new Date().toISOString() })
                         .eq("stripe_subscription_id", subscriptionId);
+
+                    // Grant 200 credits to the associated user
+                    const { data: subData } = await supabase
+                        .from("subscriptions")
+                        .select("user_id")
+                        .eq("stripe_subscription_id", subscriptionId)
+                        .single();
+
+                    if (subData?.user_id) {
+                        const { data: userData } = await supabase
+                            .from("users")
+                            .select("credits")
+                            .eq("id", subData.user_id)
+                            .single();
+
+                        const currentCredits = userData?.credits ?? 0;
+                        await supabase
+                            .from("users")
+                            .update({
+                                credits: currentCredits + 200,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq("id", subData.user_id);
+
+                        console.log(`[Stripe Webhook] Granted 200 credits to user ${subData.user_id} for subscription ${subscriptionId}`);
+                    }
                 }
                 const email = await resolveCustomerEmail(invoice.customer as string);
                 await sendAdminPaymentEmail(

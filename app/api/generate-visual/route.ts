@@ -109,7 +109,7 @@ function extractAllInlineImageDataUris(data: GeminiResponse): string[] {
 
 export async function POST(request: Request) {
   try {
-    const creditCheck = await checkCredits();
+    const creditCheck = await checkCredits(2);
     if (!creditCheck.allowed) {
       return NextResponse.json({ error: "Insufficient credits or unauthorized" }, { status: 402 });
     }
@@ -247,7 +247,7 @@ Output requirements:
     }
 
     if (!creditCheck.isAdmin && creditCheck.userId) {
-      await deductCredit(creditCheck.userId);
+      await deductCredit(creditCheck.userId, 2);
     }
 
     return NextResponse.json({ imageDataUris, aspectRatio: googleAspectRatio, size: imageSize });

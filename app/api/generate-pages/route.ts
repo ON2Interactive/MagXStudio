@@ -568,7 +568,7 @@ function buildPosterFallbackImageDataUri(topic: string): string {
 
 export async function POST(request: Request) {
   try {
-    const creditCheck = await checkCredits();
+    const creditCheck = await checkCredits(5);
     if (!creditCheck.allowed) {
       return NextResponse.json({ error: "Insufficient credits or unauthorized" }, { status: 402 });
     }
@@ -742,7 +742,7 @@ export async function POST(request: Request) {
       textData?.candidates?.[0]?.groundingMetadata?.webSearchQueries?.slice(0, 8) ?? [];
 
     if (!creditCheck.isAdmin && creditCheck.userId) {
-      await deductCredit(creditCheck.userId);
+      await deductCredit(creditCheck.userId, 5);
     }
 
     return NextResponse.json({

@@ -36,6 +36,7 @@ export async function GET(request: Request) {
                     email,
                     name,
                     avatar_url: avatarUrl,
+                    credits: 15,
                     updated_at: new Date().toISOString(),
                 },
                 { onConflict: "id" }

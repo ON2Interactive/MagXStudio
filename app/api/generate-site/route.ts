@@ -9,7 +9,7 @@ export const maxDuration = 240;
 
 export async function POST(request: Request) {
   try {
-    const creditCheck = await checkCredits();
+    const creditCheck = await checkCredits(10);
     if (!creditCheck.allowed) {
       return NextResponse.json(
         { error: "Insufficient credits or unauthorized" },
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     const data = await generateSiteWithGemini(parsed.data);
 
     if (!creditCheck.isAdmin && creditCheck.userId) {
-      await deductCredit(creditCheck.userId);
+      await deductCredit(creditCheck.userId, 10);
     }
 
     return NextResponse.json({ data });
