@@ -7,6 +7,7 @@ import { VisualsWorkspace } from "@/components/workspaces/visuals-workspace";
 import type { ReferenceImageInput } from "@/lib/types";
 import { getClientUserName, setClientUserName } from "@/lib/user-client";
 import { createClient } from "@/lib/supabase/client";
+import { SettingsModal } from "@/components/modals/SettingsModal";
 
 type WorkspaceKey = "websites" | "slides" | "pages" | "visuals";
 
@@ -19,6 +20,7 @@ const workspaces: Array<{ key: WorkspaceKey; label: string; icon: React.Componen
 
 export default function HomePage() {
   const [userName, setUserName] = useState("Username");
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [workspace, setWorkspace] = useState<WorkspaceKey>("websites");
   const [incomingPagesImage, setIncomingPagesImage] = useState<ReferenceImageInput | null>(null);
   const [incomingPagesImageVersion, setIncomingPagesImageVersion] = useState(0);
@@ -46,10 +48,7 @@ export default function HomePage() {
     fetchUser();
   }, []);
 
-  const openSettings = () => {
-    // Placeholder action until settings modal is implemented.
-    console.info("Open settings");
-  };
+  const openSettings = () => setSettingsOpen(true);
 
   const handleSendVisualToPages = (image: ReferenceImageInput) => {
     setIncomingPagesImage(image);
@@ -59,6 +58,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#141414] text-white">
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <header className="sticky top-0 z-30 bg-[#141414]/98 backdrop-blur-sm">
         <div className="w-full border-b border-black/45 py-2">
           <nav className="grid w-full grid-cols-4 items-center gap-2">
