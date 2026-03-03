@@ -74,11 +74,11 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
             onClick: handleSubscribe,
         },
         {
-            label: "Manage",
+            label: "Manage Plan",
             onClick: handleManage,
         },
         {
-            label: "Buy Credits ($10)",
+            label: "Add Credits ($10)",
             onClick: handleBuyCredits,
         },
         {
