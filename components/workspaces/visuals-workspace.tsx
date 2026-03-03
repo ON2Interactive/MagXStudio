@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ReferenceImageInput, VisualTheme, VisualAspectRatio } from "@/lib/types";
 import { useWorkspaceDraft } from "@/lib/hooks/use-workspace-draft";
 import { CreditsDisplay } from "@/components/workspaces/credits-display";
+import { useCredits } from "@/components/workspaces/credits-provider";
 
 type VisualsWorkspaceProps = {
   active: boolean;
@@ -121,6 +122,7 @@ export function VisualsWorkspace({ active, userName, onSendToPages, onOpenSettin
     mode: VisualMode;
   }>("magx-visuals-draft");
   const [draftRestoredAt, setDraftRestoredAt] = useState<number | null>(null);
+  const { canGenerate: hasCredits } = useCredits();
 
   // Restore on mount
   useEffect(() => {
@@ -160,8 +162,8 @@ export function VisualsWorkspace({ active, userName, onSendToPages, onOpenSettin
 
 
   const canGenerate = useMemo(() => {
-    return !loading;
-  }, [loading]);
+    return !loading && hasCredits;
+  }, [loading, hasCredits]);
 
   const isTechnicallyValid = () => {
     const hasPrompt = prompt.trim().length >= 8;
@@ -171,6 +173,10 @@ export function VisualsWorkspace({ active, userName, onSendToPages, onOpenSettin
   };
 
   const generateAssets = async () => {
+    if (!hasCredits) {
+      onOpenSettings?.();
+      return;
+    }
     setShowValidation(true);
     if (!isTechnicallyValid()) return;
 
@@ -263,6 +269,10 @@ export function VisualsWorkspace({ active, userName, onSendToPages, onOpenSettin
   };
 
   const remixAsset = async (asset: VisualAsset, customPrompt?: string) => {
+    if (!hasCredits) {
+      onOpenSettings?.();
+      return;
+    }
     if (asset.loading) return;
 
     console.info("[Visuals] Triggering Magic Wand Remix for asset:", asset.id, "Prompt:", customPrompt || "Global");
@@ -723,7 +733,7 @@ export function VisualsWorkspace({ active, userName, onSendToPages, onOpenSettin
                             <button
                               type="button"
                               onClick={() => remixAsset(asset, asset.remixPrompt)}
-                              disabled={asset.loading || !asset.remixPrompt?.trim()}
+                              disabled={asset.loading || !asset.remixPrompt?.trim() || !hasCredits}
                               className="absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90 disabled:opacity-30"
                             >
                               {asset.loading ? (

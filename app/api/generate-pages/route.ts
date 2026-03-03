@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { checkCredits, deductCredit } from "@/lib/credits";
 
 export const runtime = "nodejs";
 export const maxDuration = 240;
@@ -218,9 +219,9 @@ function normalizePlan(raw: Record<string, unknown>): PagePlan {
       const body = typeof sectionRecord.body === "string" ? sectionRecord.body.trim() : "";
       const bullets = Array.isArray(sectionRecord.bullets)
         ? sectionRecord.bullets
-            .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
-            .map((item) => item.trim())
-            .slice(0, 6)
+          .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+          .map((item) => item.trim())
+          .slice(0, 6)
         : [];
       if (!heading && !body && bullets.length === 0) return null;
       return {
@@ -250,12 +251,12 @@ function normalizePlan(raw: Record<string, unknown>): PagePlan {
       sections.length > 0
         ? sections
         : [
-            {
-              heading: "Overview",
-              body: "No sections were returned, so this fallback content was generated.",
-              bullets: []
-            }
-          ],
+          {
+            heading: "Overview",
+            body: "No sections were returned, so this fallback content was generated.",
+            bullets: []
+          }
+        ],
     imagePrompts:
       imagePrompts.length > 0
         ? imagePrompts
@@ -567,6 +568,11 @@ function buildPosterFallbackImageDataUri(topic: string): string {
 
 export async function POST(request: Request) {
   try {
+    const creditCheck = await checkCredits();
+    if (!creditCheck.allowed) {
+      return NextResponse.json({ error: "Insufficient credits or unauthorized" }, { status: 402 });
+    }
+
     const startedAt = Date.now();
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -613,9 +619,9 @@ export async function POST(request: Request) {
       `- Tone guidance: ${profile.toneGuidance}`,
       ...(resolvedContentType === "poster"
         ? [
-            "- Poster mode: prioritize visual output and keep text minimal.",
-            "- For poster, section copy must be compact and display-oriented."
-          ]
+          "- Poster mode: prioritize visual output and keep text minimal.",
+          "- For poster, section copy must be compact and display-oriented."
+        ]
         : []),
       "",
       `Topic: ${topic}`,
@@ -734,6 +740,10 @@ export async function POST(request: Request) {
     const css = buildCanvasCss();
     const groundingQueries =
       textData?.candidates?.[0]?.groundingMetadata?.webSearchQueries?.slice(0, 8) ?? [];
+
+    if (!creditCheck.isAdmin && creditCheck.userId) {
+      await deductCredit(creditCheck.userId);
+    }
 
     return NextResponse.json({
       data: {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkCredits, deductCredit } from "@/lib/credits";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -108,6 +109,11 @@ function extractAllInlineImageDataUris(data: GeminiResponse): string[] {
 
 export async function POST(request: Request) {
   try {
+    const creditCheck = await checkCredits();
+    if (!creditCheck.allowed) {
+      return NextResponse.json({ error: "Insufficient credits or unauthorized" }, { status: 402 });
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
@@ -238,6 +244,10 @@ Output requirements:
         },
         { status: 502 }
       );
+    }
+
+    if (!creditCheck.isAdmin && creditCheck.userId) {
+      await deductCredit(creditCheck.userId);
     }
 
     return NextResponse.json({ imageDataUris, aspectRatio: googleAspectRatio, size: imageSize });

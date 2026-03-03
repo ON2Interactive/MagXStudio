@@ -29,6 +29,7 @@ type PromptFormProps = {
   onAddImages: (images: ReferenceImageInput[]) => void;
   imageCount: number;
   loading: boolean;
+  hasCredits?: boolean;
   presentationAspectRatio?: PresentationAspectRatio;
   onPresentationAspectRatioChange?: (next: PresentationAspectRatio) => void;
   presentationDeckType?: PresentationDeckType;
@@ -48,6 +49,7 @@ export function PromptForm({
   onAddImages,
   imageCount,
   loading,
+  hasCredits = true,
   presentationAspectRatio,
   onPresentationAspectRatioChange,
   presentationDeckType,
@@ -61,6 +63,7 @@ export function PromptForm({
     onChange({ ...values, [key]: value });
   };
   const canSubmit =
+    hasCredits &&
     values.brandName.trim().length > 0 &&
     values.userPrompt.trim().length >= 10 &&
     !loading;

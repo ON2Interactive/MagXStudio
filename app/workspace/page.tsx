@@ -8,6 +8,7 @@ import type { ReferenceImageInput } from "@/lib/types";
 import { getClientUserName, setClientUserName } from "@/lib/user-client";
 import { createClient } from "@/lib/supabase/client";
 import { SettingsModal } from "@/components/modals/SettingsModal";
+import { CreditsProvider } from "@/components/workspaces/credits-provider";
 
 type WorkspaceKey = "websites" | "slides" | "pages" | "visuals";
 
@@ -82,28 +83,30 @@ export default function HomePage() {
         </div>
       </header>
 
-      <AppWorkspace
-        kind="websites"
-        userName={userName}
-        active={workspace === "websites"}
-        onOpenSettings={openSettings}
-      />
+      <CreditsProvider>
+        <AppWorkspace
+          kind="websites"
+          userName={userName}
+          active={workspace === "websites"}
+          onOpenSettings={openSettings}
+        />
 
-      <AppWorkspace kind="slides" userName={userName} active={workspace === "slides"} onOpenSettings={openSettings} />
-      <AppWorkspace
-        kind="pages"
-        userName={userName}
-        active={workspace === "pages"}
-        incomingReferenceImage={incomingPagesImage}
-        incomingReferenceImageVersion={incomingPagesImageVersion}
-        onOpenSettings={openSettings}
-      />
-      <VisualsWorkspace
-        active={workspace === "visuals"}
-        userName={userName}
-        onSendToPages={handleSendVisualToPages}
-        onOpenSettings={openSettings}
-      />
+        <AppWorkspace kind="slides" userName={userName} active={workspace === "slides"} onOpenSettings={openSettings} />
+        <AppWorkspace
+          kind="pages"
+          userName={userName}
+          active={workspace === "pages"}
+          incomingReferenceImage={incomingPagesImage}
+          incomingReferenceImageVersion={incomingPagesImageVersion}
+          onOpenSettings={openSettings}
+        />
+        <VisualsWorkspace
+          active={workspace === "visuals"}
+          userName={userName}
+          onSendToPages={handleSendVisualToPages}
+          onOpenSettings={openSettings}
+        />
+      </CreditsProvider>
 
       <button
         type="button"

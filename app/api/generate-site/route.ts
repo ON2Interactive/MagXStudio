@@ -2,12 +2,21 @@ import { NextResponse } from "next/server";
 import { generateSiteWithGemini } from "@/lib/gemini";
 import { generateSiteInputSchema } from "@/lib/schemas";
 import { sanitizeGenerateSiteInput } from "@/lib/sanitize";
+import { checkCredits, deductCredit } from "@/lib/credits";
 
 export const runtime = "nodejs";
 export const maxDuration = 240;
 
 export async function POST(request: Request) {
   try {
+    const creditCheck = await checkCredits();
+    if (!creditCheck.allowed) {
+      return NextResponse.json(
+        { error: "Insufficient credits or unauthorized" },
+        { status: 402 }
+      );
+    }
+
     const body = (await request.json()) as Record<string, unknown>;
     const sanitized = sanitizeGenerateSiteInput(body as never);
 
@@ -26,6 +35,10 @@ export async function POST(request: Request) {
     console.log(`[generate-site] Received request with ${parsed.data.referenceImages?.length ?? 0} reference images.`);
 
     const data = await generateSiteWithGemini(parsed.data);
+
+    if (!creditCheck.isAdmin && creditCheck.userId) {
+      await deductCredit(creditCheck.userId);
+    }
 
     return NextResponse.json({ data });
   } catch (caught) {

@@ -53,6 +53,7 @@ import type {
 import { replaceReferenceTokens } from "@/lib/gemini";
 import { useWorkspaceDraft } from "@/lib/hooks/use-workspace-draft";
 import { CreditsDisplay } from "@/components/workspaces/credits-display";
+import { useCredits } from "@/components/workspaces/credits-provider";
 
 type WorkspaceKind = "websites" | "slides" | "pages" | "visuals";
 type VisualMode = "text-to-image" | "image-to-image";
@@ -852,6 +853,7 @@ export function AppWorkspace({
   const isSlidesWorkspace = kind === "slides";
   const isPagesWorkspace = kind === "pages";
   const isMagXStudioWorkspace = kind === "slides" || kind === "pages";
+  const { canGenerate: hasCredits } = useCredits();
   const pagesDraft = useWorkspaceDraft<{
     site: GeneratedSiteContract;
     activePage: PageKey;
@@ -3091,6 +3093,10 @@ body[data-preview-static="true"] .fx-image-frame:not(.fx-shape-frame) .fx-handle
 
   const generateMagicVisualAndInsert = async () => {
     if (!isMagXStudioWorkspace) return;
+    if (!hasCredits) {
+      onOpenSettings?.();
+      return;
+    }
     if (!canGenerateMagicVisual) {
       setMagicSubmitAttempted(true);
       return;
@@ -3320,6 +3326,10 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
 
   const generatePagesDesignAndInsert = async () => {
     if (!isPagesWorkspace) return;
+    if (!hasCredits) {
+      onOpenSettings?.();
+      return;
+    }
     const topic = pagesDesignerTopic.trim();
     if (!topic || topic.length < 8) {
       setPagesDesignerSubmitAttempted(true);
@@ -5433,6 +5443,10 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
   };
 
   const generate = async () => {
+    if (!hasCredits) {
+      onOpenSettings?.();
+      return;
+    }
     setError(null);
     setLoading(true);
 
@@ -5722,16 +5736,16 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
   );
   const canGenerateMagicVisual = useMemo(
     () =>
-      !magicGenerating && isMagicPromptValid && isMagicAspectRatioValid && isMagicSourceImageValid,
-    [magicGenerating, isMagicPromptValid, isMagicAspectRatioValid, isMagicSourceImageValid]
+      !magicGenerating && isMagicPromptValid && isMagicAspectRatioValid && isMagicSourceImageValid && hasCredits,
+    [magicGenerating, isMagicPromptValid, isMagicAspectRatioValid, isMagicSourceImageValid, hasCredits]
   );
   const isPagesDesignerTopicValid = useMemo(
     () => pagesDesignerTopic.trim().length >= 8,
     [pagesDesignerTopic]
   );
   const canGeneratePagesDesignerContent = useMemo(
-    () => !magicGenerating && isPagesDesignerTopicValid,
-    [magicGenerating, isPagesDesignerTopicValid]
+    () => !magicGenerating && isPagesDesignerTopicValid && hasCredits,
+    [magicGenerating, isPagesDesignerTopicValid, hasCredits]
   );
   const showMagicPromptInvalid = (magicPromptTouched || magicSubmitAttempted) && !isMagicPromptValid;
   const showMagicAspectInvalid = (magicAspectTouched || magicSubmitAttempted) && !isMagicAspectRatioValid;
@@ -6586,11 +6600,13 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
           <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
             <div className="w-full max-w-[980px] bg-[#121214] p-4 md:p-5">
               <PromptForm
+                key={`prompt-slides-${kind}`}
                 values={values}
                 onChange={setValues}
                 onSubmit={async () => {
                   await generate();
                 }}
+                hasCredits={hasCredits}
                 onAddImages={addReferenceImages}
                 imageCount={referenceImages.length}
                 loading={loading}
@@ -6629,6 +6645,7 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
                   values={values}
                   onChange={setValues}
                   onSubmit={generate}
+                  hasCredits={hasCredits}
                   onAddImages={addReferenceImages}
                   imageCount={referenceImages.length}
                   loading={loading}
@@ -7150,11 +7167,12 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
                   values={values}
                   onChange={setValues}
                   onSubmit={generate}
+                  hasCredits={hasCredits}
                   onAddImages={addReferenceImages}
                   imageCount={referenceImages.length}
                   loading={loading}
-                  showIndustryField
-                  showThemeField={kind === "websites" || kind === "visuals"}
+                  showIndustryField={false}
+                  showThemeField={false}
                   showVisualFields={kind === "visuals"}
                 />
               </Card>
