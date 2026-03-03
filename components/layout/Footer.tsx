@@ -34,7 +34,7 @@ export function Footer() {
                 </nav>
 
                 {/* Copyright */}
-                <div className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
+                <div className="text-[10px] font-bold text-white/30 tracking-wider">
                     © {currentYear} MagXStudio. All rights reserved.
                 </div>
             </div>

@@ -55,7 +55,7 @@ export default function PricingPage() {
 
                         <div className="flex justify-center">
                             <button
-                                className="text-sm font-bold text-white hover:text-white/70 transition-colors uppercase tracking-widest cursor-pointer"
+                                className="text-sm font-bold text-white hover:text-white/70 transition-colors tracking-wide cursor-pointer"
                                 onClick={async () => {
                                     const priceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
                                     if (!priceId) return;
