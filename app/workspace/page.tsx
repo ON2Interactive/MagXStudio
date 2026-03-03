@@ -33,11 +33,12 @@ export default function HomePage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const name =
+        const fullName =
           user.user_metadata?.full_name ||
           user.user_metadata?.name ||
           user.email?.split("@")[0] ||
           "User";
+        const name = fullName.split(" ")[0];
         setClientUserName(name);
         setUserName(name);
       }

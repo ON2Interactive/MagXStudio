@@ -6619,7 +6619,7 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
         {!showWorkspaceLayout ? (
           <div className="flex min-h-[calc(100vh-180px)] items-center">
             <div className="mx-auto w-full max-w-[960px]">
-              <p className={`mb-5 text-center text-[24px] leading-tight text-white/75 ${loading ? "animate-pulse" : ""}`}>Hello ({userName})</p>
+              <p className={`mb-5 text-center text-[24px] leading-tight text-white/75 ${loading ? "animate-pulse" : ""}`}>Hello {userName}</p>
               <Card className="p-4 md:p-5">
                 <PromptForm
                   values={values}
