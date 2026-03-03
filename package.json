@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.98.0",
     "gsap": "^3.14.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.511.0",
