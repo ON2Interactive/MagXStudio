@@ -15,7 +15,9 @@ export function Navbar() {
         pathname === "/contact" ||
         pathname === "/privacy" ||
         pathname === "/terms" ||
-        pathname === "/signup";
+        pathname === "/signup" ||
+        pathname === "/blog" ||
+        pathname.startsWith("/blog/");
 
     if (isMarketingPage) {
         return (
