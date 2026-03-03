@@ -33,13 +33,13 @@ export async function GET() {
 // POST save/publish a post
 export async function POST(req: Request) {
     if (!await checkAuth()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { title, slug, content, status } = await req.json() as {
-        title: string; slug: string; content: string; status: "draft" | "published";
+    const { title, slug, content, status, cover_image } = await req.json() as {
+        title: string; slug: string; content: string; status: "draft" | "published"; cover_image?: string;
     };
     const supabase = getServiceClient();
     const { data, error } = await supabase
         .from("blog_posts")
-        .insert({ title, slug, content, status, created_at: new Date().toISOString() })
+        .insert({ title, slug, content, status, cover_image: cover_image ?? null, created_at: new Date().toISOString() })
         .select("id")
         .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

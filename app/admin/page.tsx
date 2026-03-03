@@ -25,27 +25,29 @@ export default function AdminPage() {
     return (
         <div className="min-h-screen bg-black text-white font-sans">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-6">
-                <div className="flex items-center gap-6">
-                    <h1 className="text-2xl font-bold">Admin</h1>
-                    <div className="flex items-center gap-1">
-                        {(["users", "blog"] as Tab[]).map((t) => (
-                            <button
-                                key={t}
-                                onClick={() => setTab(t)}
-                                className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${tab === t ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
-                            >
-                                {t}
-                            </button>
-                        ))}
+            <div className="mx-auto max-w-[1200px] px-6">
+                <div className="flex items-center justify-between py-6">
+                    <div className="flex items-center gap-6">
+                        <h1 className="text-2xl font-bold">Admin</h1>
+                        <div className="flex items-center gap-1">
+                            {(["users", "blog"] as Tab[]).map((t) => (
+                                <button
+                                    key={t}
+                                    onClick={() => setTab(t)}
+                                    className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${tab === t ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
+                                >
+                                    {t}
+                                </button>
+                            ))}
+                        </div>
                     </div>
+                    <button onClick={handleLogout} className="text-sm text-white/50 hover:text-white transition-colors">
+                        Log Out
+                    </button>
                 </div>
-                <button onClick={handleLogout} className="text-sm text-white/50 hover:text-white transition-colors">
-                    Log Out
-                </button>
             </div>
 
-            <div className="px-6 pb-12">
+            <div className="mx-auto max-w-[1200px] px-6 pb-12">
                 {tab === "users" ? <UsersTab /> : <BlogTab />}
             </div>
         </div>
@@ -210,6 +212,8 @@ function BlogTab() {
     const [title, setTitle] = useState("");
     const [slug, setSlug] = useState("");
     const [content, setContent] = useState("");
+    const [coverImage, setCoverImage] = useState("");
+    const [generatingImage, setGeneratingImage] = useState(false);
     const [saving, setSaving] = useState(false);
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [loadingPosts, setLoadingPosts] = useState(true);
@@ -249,10 +253,10 @@ function BlogTab() {
         await fetch("/api/admin/blog", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, slug, content, status }),
+            body: JSON.stringify({ title, slug, content, status, cover_image: coverImage }),
         });
         setSaving(false);
-        setTopic(""); setTitle(""); setSlug(""); setContent("");
+        setTopic(""); setTitle(""); setSlug(""); setContent(""); setCoverImage("");
         await fetchPosts();
     };
 
@@ -315,6 +319,53 @@ function BlogTab() {
                         <label className="text-xs text-white/50">Slug</label>
                         <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 text-white/60 text-xs px-3 py-2 rounded focus:outline-none focus:border-white/30 font-mono" />
+                    </div>
+
+                    {/* Cover Image */}
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-white/50">Cover Image</label>
+                        <div className="flex items-center gap-3">
+                            <label className="cursor-pointer text-xs text-white/50 hover:text-white transition-colors border border-white/10 px-3 py-1.5 rounded">
+                                Upload
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => setCoverImage(ev.target?.result as string);
+                                    reader.readAsDataURL(file);
+                                }} />
+                            </label>
+                            <button
+                                onClick={async () => {
+                                    if (!topic) return;
+                                    setGeneratingImage(true);
+                                    try {
+                                        const res = await fetch("/api/admin/blog/generate-image", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ topic: title || topic }),
+                                        });
+                                        if (res.ok) {
+                                            const { dataUrl } = await res.json() as { dataUrl: string };
+                                            setCoverImage(dataUrl);
+                                        }
+                                    } finally {
+                                        setGeneratingImage(false);
+                                    }
+                                }}
+                                disabled={generatingImage}
+                                className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors border border-white/10 px-3 py-1.5 rounded disabled:opacity-40"
+                            >
+                                {generatingImage && <Loader2 className="h-3 w-3 animate-spin" />}
+                                {generatingImage ? "Generating…" : "Generate with AI"}
+                            </button>
+                            {coverImage && (
+                                <button onClick={() => setCoverImage("")} className="text-xs text-white/30 hover:text-red-400 transition-colors">Remove</button>
+                            )}
+                        </div>
+                        {coverImage && (
+                            <img src={coverImage} alt="Cover preview" className="mt-2 w-full max-h-48 object-cover rounded-lg border border-white/10" />
+                        )}
                     </div>
 
                     <div className="flex flex-col gap-1.5">
