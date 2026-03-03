@@ -24,7 +24,7 @@ export async function GET() {
     const supabase = getServiceClient();
     const { data, error } = await supabase
         .from("blog_posts")
-        .select("id, title, slug, status, created_at")
+        .select("id, title, slug, status, content, cover_image, created_at")
         .order("created_at", { ascending: false });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ posts: data });
@@ -44,6 +44,22 @@ export async function POST(req: Request) {
         .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ id: data.id });
+}
+
+// PATCH update a post
+export async function PATCH(req: Request) {
+    if (!await checkAuth()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { id, title, slug, content, status, cover_image } = await req.json() as {
+        id: string; title: string; slug: string; content: string;
+        status: "draft" | "published"; cover_image?: string;
+    };
+    const supabase = getServiceClient();
+    const { error } = await supabase
+        .from("blog_posts")
+        .update({ title, slug, content, status, cover_image: cover_image ?? null })
+        .eq("id", id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
 }
 
 // DELETE a post

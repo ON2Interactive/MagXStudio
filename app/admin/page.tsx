@@ -8,7 +8,7 @@ import { Mail, Trash2, X, RefreshCcw, Loader2 } from "lucide-react";
 
 type AdminUser = { id: string; email: string; username: string; credits: number; status: string; created: string };
 type EmailModal = { email: string; firstName: string } | null;
-type BlogPost = { id: string; title: string; slug: string; status: string; created_at: string };
+type BlogPost = { id: string; title: string; slug: string; status: string; content: string; cover_image?: string; created_at: string };
 type Tab = "users" | "blog";
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -215,6 +215,7 @@ function BlogTab() {
     const [coverImage, setCoverImage] = useState("");
     const [generatingImage, setGeneratingImage] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [loadingPosts, setLoadingPosts] = useState(true);
 
@@ -250,14 +251,37 @@ function BlogTab() {
     const handleSave = async (status: "draft" | "published") => {
         if (!title || !content) return;
         setSaving(true);
-        await fetch("/api/admin/blog", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, slug, content, status, cover_image: coverImage }),
-        });
+        if (editingId) {
+            await fetch("/api/admin/blog", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: editingId, title, slug, content, status, cover_image: coverImage }),
+            });
+        } else {
+            await fetch("/api/admin/blog", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, slug, content, status, cover_image: coverImage }),
+            });
+        }
         setSaving(false);
+        setEditingId(null);
         setTopic(""); setTitle(""); setSlug(""); setContent(""); setCoverImage("");
         await fetchPosts();
+    };
+
+    const handleEdit = (post: BlogPost) => {
+        setEditingId(post.id);
+        setTitle(post.title);
+        setSlug(post.slug);
+        setContent(post.content);
+        setCoverImage(post.cover_image ?? "");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setTitle(""); setSlug(""); setContent(""); setCoverImage("");
     };
 
     const handleDeletePost = async (id: string) => {
@@ -304,10 +328,15 @@ function BlogTab() {
                 </button>
             </div>
 
-            {/* Editor (shows after generation) */}
-            {content && (
+            {/* Editor (shows when content exists or editing) */}
+            {(content || editingId) && (
                 <div className="border border-white/10 rounded-lg p-6 flex flex-col gap-5">
-                    <h2 className="text-sm font-semibold">Edit & Publish</h2>
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-semibold">{editingId ? "Edit Post" : "Edit & Publish"}</h2>
+                        {editingId && (
+                            <button onClick={handleCancelEdit} className="text-xs text-white/30 hover:text-white transition-colors">Cancel</button>
+                        )}
+                    </div>
 
                     <div className="flex flex-col gap-1.5">
                         <label className="text-xs text-white/50">Title</label>
@@ -377,11 +406,11 @@ function BlogTab() {
                     <div className="flex items-center gap-4">
                         <button onClick={() => handleSave("draft")} disabled={saving}
                             className="text-xs font-medium text-white/50 hover:text-white transition-colors disabled:opacity-40">
-                            Save as Draft
+                            {editingId ? "Save Draft" : "Save as Draft"}
                         </button>
                         <button onClick={() => handleSave("published")} disabled={saving}
                             className="text-sm font-semibold text-white hover:text-white/70 transition-colors disabled:opacity-40">
-                            {saving ? "Publishing…" : "Publish →"}
+                            {saving ? "Saving…" : editingId ? "Update →" : "Publish →"}
                         </button>
                     </div>
                 </div>
@@ -420,6 +449,7 @@ function BlogTab() {
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
                                             <a href={`/blog/${post.slug}`} target="_blank" rel="noreferrer" className="text-xs text-white/30 hover:text-white transition-colors">View</a>
+                                            <button onClick={() => handleEdit(post)} className="text-xs text-white/40 hover:text-white transition-colors">Edit</button>
                                             <button onClick={() => handleDeletePost(post.id)} className="text-white/30 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
                                         </div>
                                     </td>
