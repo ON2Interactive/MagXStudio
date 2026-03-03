@@ -8,6 +8,10 @@ import {
 } from "@/lib/email";
 import type Stripe from "stripe";
 
+const TOP_UP_PRICE_ID = "price_1T6wtsPKoJ7Z0f639J0RogcH";
+const SUBSCRIPTION_CREDIT_AMOUNT = 200;
+const TOP_UP_CREDIT_AMOUNT = 100;
+
 function getServiceClient() {
     return createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -101,6 +105,29 @@ export async function POST(req: Request) {
                         "New subscription",
                         `Customer <strong>${email}</strong> just subscribed. Amount: $${((session.amount_total ?? 0) / 100).toFixed(2)}`
                     );
+                } else if (session.mode === "payment" && session.client_reference_id) {
+                    // Check if this was a credit top-up
+                    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+                    const hasTopUp = lineItems.data.some(item => item.price?.id === TOP_UP_PRICE_ID);
+
+                    if (hasTopUp) {
+                        const { data: userData } = await supabase
+                            .from("users")
+                            .select("credits")
+                            .eq("id", session.client_reference_id)
+                            .single();
+
+                        const currentCredits = userData?.credits ?? 0;
+                        await supabase
+                            .from("users")
+                            .update({
+                                credits: currentCredits + TOP_UP_CREDIT_AMOUNT,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq("id", session.client_reference_id);
+
+                        console.log(`[Stripe Webhook] Granted ${TOP_UP_CREDIT_AMOUNT} credits to user ${session.client_reference_id} via Top-up Pack`);
+                    }
                 }
                 break;
             }
@@ -159,12 +186,12 @@ export async function POST(req: Request) {
                         await supabase
                             .from("users")
                             .update({
-                                credits: currentCredits + 200,
+                                credits: currentCredits + SUBSCRIPTION_CREDIT_AMOUNT,
                                 updated_at: new Date().toISOString()
                             })
                             .eq("id", subData.user_id);
 
-                        console.log(`[Stripe Webhook] Granted 200 credits to user ${subData.user_id} for subscription ${subscriptionId}`);
+                        console.log(`[Stripe Webhook] Granted ${SUBSCRIPTION_CREDIT_AMOUNT} credits to user ${subData.user_id} for subscription ${subscriptionId}`);
                     }
                 }
                 const email = await resolveCustomerEmail(invoice.customer as string);
