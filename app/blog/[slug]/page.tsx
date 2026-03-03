@@ -45,6 +45,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             .replace(/^## (.+)$/gm, "<h2 class=\"text-2xl font-bold mt-10 mb-4\">$1</h2>")
             .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
             .replace(/\*(.+?)\*/g, "<em>$1</em>")
+            // Markdown links [text](url) → <a>
+            .replace(/\[(.+?)\]\((https?:\/\/[^)]+)\)/g, "<a href=\"$2\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-white underline underline-offset-2 hover:text-white/70 transition-colors\">$1</a>")
+            // Internal/relative links [text](/path) → <a>
+            .replace(/\[(.+?)\]\((\/?[^)]+)\)/g, "<a href=\"$2\" class=\"text-white underline underline-offset-2 hover:text-white/70 transition-colors\">$1</a>")
+            // Bare CTA text like [Start Building with MagXStudio] with no URL → link to /signup
+            .replace(/\[([^\]]*MagXStudio[^\]]*)\]/gi, "<a href=\"/signup\" class=\"text-white font-semibold underline underline-offset-2 hover:text-white/70 transition-colors\">$1</a>")
             .replace(/^- (.+)$/gm, "<li class=\"ml-5 list-disc mb-1\">$1</li>")
             .replace(/\n\n/g, "</p><p class=\"mb-5\">")
             .replace(/^(?!<[h|l])(.+)$/gm, "<p class=\"mb-5\">$1</p>");
