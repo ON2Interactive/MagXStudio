@@ -18,9 +18,21 @@ type MenuAction = {
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
     if (!open) return null;
 
-    const handleSubscribe = () => {
-        onClose();
-        window.location.href = "/pricing";
+    const handleSubscribe = async () => {
+        const priceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
+        if (!priceId) return;
+        const res = await fetch("/api/stripe/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ priceId }),
+        });
+        if (res.status === 401) {
+            onClose();
+            window.location.href = "/signup";
+            return;
+        }
+        const { url } = await res.json() as { url: string };
+        if (url) window.location.href = url;
     };
 
     const handleManage = async () => {
