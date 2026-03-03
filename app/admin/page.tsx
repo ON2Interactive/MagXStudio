@@ -216,6 +216,7 @@ function BlogTab() {
     const [coverImage, setCoverImage] = useState("");
     const [generatingImage, setGeneratingImage] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState("");
     const [editingId, setEditingId] = useState<string | null>(null);
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [loadingPosts, setLoadingPosts] = useState(true);
@@ -259,23 +260,35 @@ function BlogTab() {
     const handleSave = async (status: "draft" | "published") => {
         if (!title || !content) return;
         setSaving(true);
-        if (editingId) {
-            await fetch("/api/admin/blog", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: editingId, title, slug, content, status, cover_image: coverImage }),
-            });
-        } else {
-            await fetch("/api/admin/blog", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, slug, content, status, cover_image: coverImage }),
-            });
+        setSaveError("");
+        try {
+            const res = editingId
+                ? await fetch("/api/admin/blog", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: editingId, title, slug, content, status, cover_image: coverImage || null }),
+                })
+                : await fetch("/api/admin/blog", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, slug, content, status, cover_image: coverImage || null }),
+                });
+
+            const data = await res.json() as { error?: string };
+            if (!res.ok) {
+                setSaveError(data.error ?? `Save failed (${res.status})`);
+                return; // keep form content intact
+            }
+
+            // Success — clear the form
+            setEditingId(null);
+            setTopic(""); setTitle(""); setSlug(""); setContent(""); setCoverImage("");
+            await fetchPosts();
+        } catch (e) {
+            setSaveError(e instanceof Error ? e.message : "Network error");
+        } finally {
+            setSaving(false);
         }
-        setSaving(false);
-        setEditingId(null);
-        setTopic(""); setTitle(""); setSlug(""); setContent(""); setCoverImage("");
-        await fetchPosts();
     };
 
     const handleEdit = (post: BlogPost) => {
@@ -414,15 +427,20 @@ function BlogTab() {
                             className="w-full bg-white/5 border border-white/10 text-white text-xs px-3 py-2 rounded focus:outline-none focus:border-white/30 resize-y font-mono leading-relaxed" />
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => handleSave("draft")} disabled={saving}
-                            className="text-xs font-medium text-white/50 hover:text-white transition-colors disabled:opacity-40">
-                            {editingId ? "Save Draft" : "Save as Draft"}
-                        </button>
-                        <button onClick={() => handleSave("published")} disabled={saving}
-                            className="text-sm font-semibold text-white hover:text-white/70 transition-colors disabled:opacity-40">
-                            {saving ? "Saving…" : editingId ? "Update →" : "Publish →"}
-                        </button>
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => handleSave("draft")} disabled={saving}
+                                className="text-xs font-medium text-white/50 hover:text-white transition-colors disabled:opacity-40">
+                                {editingId ? "Save Draft" : "Save as Draft"}
+                            </button>
+                            <button onClick={() => handleSave("published")} disabled={saving}
+                                className="text-sm font-semibold text-white hover:text-white/70 transition-colors disabled:opacity-40">
+                                {saving ? "Saving…" : editingId ? "Update →" : "Publish →"}
+                            </button>
+                        </div>
+                        {saveError && (
+                            <p className="text-xs text-red-400">{saveError}</p>
+                        )}
                     </div>
                 </div>
             )}
