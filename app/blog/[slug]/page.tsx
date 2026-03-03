@@ -84,7 +84,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             {/* Article body */}
             <main className="mx-auto max-w-[760px] px-6 pt-14 pb-24">
                 <article
-                    className="text-white/70 text-base leading-relaxed"
+                    className="text-white/85 text-base leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: toHtml(content) }}
                 />
             </main>
