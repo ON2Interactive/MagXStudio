@@ -25,7 +25,7 @@ export async function POST(req: Request) {
         client_reference_id: user.id, // links Stripe customer → Supabase user in webhook
         line_items: [{ price: priceId, quantity: 1 }],
         success_url: `${appUrl}/workspace?subscribed=true`,
-        cancel_url: `${appUrl}/pricing`,
+        cancel_url: `${appUrl}/workspace`,
         metadata: { user_id: user.id },
     });
 
