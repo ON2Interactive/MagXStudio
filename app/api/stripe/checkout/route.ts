@@ -11,15 +11,17 @@ export async function POST(req: Request) {
     }
 
     const { priceId } = await req.json() as { priceId: string };
+    const TOP_UP_PRICE_ID = "price_1T6wtsPKoJ7Z0f639J0RogcH";
 
     if (!priceId) {
         return NextResponse.json({ error: "Missing priceId" }, { status: 400 });
     }
 
+    const mode = priceId === TOP_UP_PRICE_ID ? "payment" : "subscription";
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://magxstudio.com";
 
     const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
+        mode,
         payment_method_types: ["card"],
         customer_email: user.email,
         client_reference_id: user.id, // links Stripe customer → Supabase user in webhook
