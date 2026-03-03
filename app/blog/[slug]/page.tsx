@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
-type Post = { title: string; content: string; created_at: string };
+type Post = { title: string; content: string; cover_image?: string; created_at: string };
 
 export const revalidate = 60;
 
@@ -27,39 +27,64 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     );
     const { data: post } = await supabase
         .from("blog_posts")
-        .select("title, content, created_at")
+        .select("title, content, cover_image, created_at")
         .eq("slug", slug)
         .eq("status", "published")
         .single();
 
     if (!post) notFound();
 
-    const { title, content, created_at } = post as Post;
+    const { title, content, cover_image, created_at } = post as Post;
     const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
-    // Convert basic markdown to HTML (headings, bold, paragraphs)
+    // Convert basic markdown to HTML
     const toHtml = (md: string) =>
         md
+            .replace(/^# .+$/gm, "") // strip H1 from body (it's in the hero)
             .replace(/^### (.+)$/gm, "<h3 class=\"text-lg font-semibold mt-8 mb-3\">$1</h3>")
             .replace(/^## (.+)$/gm, "<h2 class=\"text-2xl font-bold mt-10 mb-4\">$1</h2>")
-            .replace(/^# (.+)$/gm, "<h1 class=\"text-3xl font-bold mt-10 mb-4\">$1</h1>")
             .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
             .replace(/\*(.+?)\*/g, "<em>$1</em>")
-            .replace(/^- (.+)$/gm, "<li class=\"ml-5 list-disc\">$1</li>")
-            .replace(/\n\n/g, "</p><p class=\"mb-4\">")
-            .replace(/^(?!<[h|l])(.+)$/gm, "<p class=\"mb-4\">$1</p>");
+            .replace(/^- (.+)$/gm, "<li class=\"ml-5 list-disc mb-1\">$1</li>")
+            .replace(/\n\n/g, "</p><p class=\"mb-5\">")
+            .replace(/^(?!<[h|l])(.+)$/gm, "<p class=\"mb-5\">$1</p>");
 
     return (
         <div className="min-h-screen bg-black text-white font-sans">
             <Navbar />
-            <main className="mx-auto max-w-3xl px-5 pt-40 pb-24">
-                <p className="text-[11px] text-white/30 font-medium mb-4">{fmt(created_at)}</p>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-12 leading-snug">{title}</h1>
+
+            {/* Hero */}
+            <div
+                className="relative w-full flex items-end"
+                style={{
+                    maxHeight: "800px",
+                    height: cover_image ? "55vw" : "320px",
+                    minHeight: "320px",
+                    background: cover_image
+                        ? `url(${cover_image}) center/cover no-repeat`
+                        : "linear-gradient(135deg, #111 0%, #1a1a1a 100%)",
+                }}
+            >
+                {/* Gradient overlay */}
+                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.2) 100%)" }} />
+
+                {/* Title block */}
+                <div className="relative z-10 w-full mx-auto max-w-[1200px] px-6 pb-12 pt-32">
+                    <p className="text-xs text-white/40 font-medium mb-3 tracking-wide">{fmt(created_at)}</p>
+                    <h1 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight max-w-3xl">
+                        {title}
+                    </h1>
+                </div>
+            </div>
+
+            {/* Article body */}
+            <main className="mx-auto max-w-[760px] px-6 pt-14 pb-24">
                 <article
-                    className="prose-invert text-white/70 text-base leading-relaxed"
+                    className="text-white/70 text-base leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: toHtml(content) }}
                 />
             </main>
+
             <Footer />
         </div>
     );
