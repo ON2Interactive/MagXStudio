@@ -209,6 +209,7 @@ function BlogTab() {
     const [topic, setTopic] = useState("");
     const [tone, setTone] = useState("Informative");
     const [generating, setGenerating] = useState(false);
+    const [generateError, setGenerateError] = useState("");
     const [title, setTitle] = useState("");
     const [slug, setSlug] = useState("");
     const [content, setContent] = useState("");
@@ -233,16 +234,23 @@ function BlogTab() {
         if (!topic.trim()) return;
         setGenerating(true);
         setContent("");
+        setGenerateError("");
         try {
             const res = await fetch("/api/admin/blog/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ topic, tone }),
             });
-            const data = await res.json() as { title: string; slug: string; content: string };
-            setTitle(data.title);
-            setSlug(data.slug);
-            setContent(data.content);
+            const data = await res.json() as { title: string; slug: string; content: string; error?: string };
+            if (!res.ok || data.error) {
+                setGenerateError(data.error ?? `Error ${res.status}`);
+            } else {
+                setTitle(data.title);
+                setSlug(data.slug);
+                setContent(data.content);
+            }
+        } catch (e) {
+            setGenerateError(e instanceof Error ? e.message : "Network error");
         } finally {
             setGenerating(false);
         }
@@ -326,6 +334,9 @@ function BlogTab() {
                     {generating && <Loader2 className="h-4 w-4 animate-spin" />}
                     {generating ? "Generating…" : "Generate →"}
                 </button>
+                {generateError && (
+                    <p className="text-xs text-red-400">{generateError}</p>
+                )}
             </div>
 
             {/* Editor (shows when content exists or editing) */}
