@@ -26,6 +26,7 @@ export function Footer() {
                     <Link href="/signup" className="text-base font-medium text-white/50 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300">Sign Up</Link>
                     <Link href="/pricing" className="text-base font-medium text-white/50 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300">Pricing</Link>
                     <Link href="/faqs" className="text-base font-medium text-white/50 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300">FAQs</Link>
+                    <Link href="/blog" className="text-base font-medium text-white/50 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300">Blog</Link>
                     <Link href="/help" className="text-base font-medium text-white/50 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300">Help</Link>
                     <Link href="/contact" className="text-base font-medium text-white/50 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300">Contact</Link>
                     <Link href="/privacy" className="text-base font-medium text-white/50 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300">Privacy</Link>
