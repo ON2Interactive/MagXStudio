@@ -5,7 +5,8 @@ import { Globe, Image, LayoutPanelTop, Presentation, Settings } from "lucide-rea
 import { AppWorkspace } from "@/components/workspaces/app-workspace";
 import { VisualsWorkspace } from "@/components/workspaces/visuals-workspace";
 import type { ReferenceImageInput } from "@/lib/types";
-import { getClientUserName } from "@/lib/user-client";
+import { getClientUserName, setClientUserName } from "@/lib/user-client";
+import { createClient } from "@/lib/supabase/client";
 
 type WorkspaceKey = "websites" | "slides" | "pages" | "visuals";
 
@@ -23,8 +24,25 @@ export default function HomePage() {
   const [incomingPagesImageVersion, setIncomingPagesImageVersion] = useState(0);
 
   useEffect(() => {
-    const nextUserName = getClientUserName();
-    if (nextUserName) setUserName(nextUserName);
+    // Show stored name instantly (avoids flash)
+    const stored = getClientUserName();
+    if (stored) setUserName(stored);
+
+    // Fetch authoritative name from Supabase session
+    const fetchUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const name =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email?.split("@")[0] ||
+          "User";
+        setClientUserName(name);
+        setUserName(name);
+      }
+    };
+    fetchUser();
   }, []);
 
   const openSettings = () => {
