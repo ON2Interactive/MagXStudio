@@ -54,7 +54,24 @@ export default function PricingPage() {
                         </div>
 
                         <div className="flex justify-center">
-                            <button className="text-sm font-bold text-white hover:text-white/70 transition-colors uppercase tracking-widest cursor-pointer">
+                            <button
+                                className="text-sm font-bold text-white hover:text-white/70 transition-colors uppercase tracking-widest cursor-pointer"
+                                onClick={async () => {
+                                    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
+                                    if (!priceId) return;
+                                    const res = await fetch("/api/stripe/checkout", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ priceId }),
+                                    });
+                                    if (res.status === 401) {
+                                        window.location.href = "/signup";
+                                        return;
+                                    }
+                                    const { url } = await res.json() as { url: string };
+                                    if (url) window.location.href = url;
+                                }}
+                            >
                                 Subscribe
                             </button>
                         </div>
