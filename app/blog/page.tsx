@@ -29,7 +29,6 @@ export default async function BlogIndexPage() {
         <div className="min-h-screen bg-black text-white font-sans">
             <Navbar />
             <main className="mx-auto max-w-[1200px] px-6 pt-40 pb-24">
-                <h1 className="text-4xl font-bold tracking-tight mb-10">MagXStudio Blog</h1>
                 <BlogList posts={(posts ?? []) as Post[]} />
             </main>
             <Footer />
