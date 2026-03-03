@@ -59,7 +59,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 style={{
                     maxHeight: "800px",
                     height: cover_image ? "55vw" : "320px",
-                    minHeight: "320px",
+                    minHeight: "480px",
                     background: cover_image
                         ? `url(${cover_image}) center/cover no-repeat`
                         : "linear-gradient(135deg, #111 0%, #1a1a1a 100%)",
@@ -69,7 +69,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.2) 100%)" }} />
 
                 {/* Title block */}
-                <div className="relative z-10 w-full mx-auto max-w-[1200px] px-6 pb-12 pt-32">
+                <div className="relative z-10 w-full mx-auto max-w-[1200px] px-6 pb-12 pt-32 flex flex-col items-center text-center">
                     <p className="text-xs text-white/40 font-medium mb-3 tracking-wide">{fmt(created_at)}</p>
                     <h1 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight max-w-3xl">
                         {title}
