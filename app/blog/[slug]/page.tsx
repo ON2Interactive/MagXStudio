@@ -55,11 +55,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
             {/* Hero */}
             <div
-                className="relative w-full flex items-end"
+                className="relative w-full flex items-end min-h-[480px] md:min-h-[600px] max-h-[800px]"
                 style={{
-                    maxHeight: "800px",
-                    height: cover_image ? "55vw" : "320px",
-                    minHeight: "480px",
+                    height: cover_image ? "55vw" : "400px",
                     background: cover_image
                         ? `url(${cover_image}) center/cover no-repeat`
                         : "linear-gradient(135deg, #111 0%, #1a1a1a 100%)",
