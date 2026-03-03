@@ -95,7 +95,7 @@ export function BlogList({ posts }: { posts: Post[] }) {
                                     Read →
                                 </span>
                             </Link>
-                            <div className="mt-5 border-b border-white/[0.05]" />
+                            <div className="mt-5 border-b border-white/20" />
                         </div>
                     ))}
                 </div>
