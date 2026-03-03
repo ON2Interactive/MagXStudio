@@ -11,7 +11,6 @@ type SettingsModalProps = {
 
 type MenuAction = {
     label: string;
-    description: string;
     onClick: () => void;
 };
 
@@ -55,23 +54,19 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
     const actions: MenuAction[] = [
         {
             label: "Subscribe",
-            description: "Unlock AI generation, export, and 200 credits/month.",
             onClick: handleSubscribe,
         },
         {
             label: "Manage",
-            description: "Update billing, change plan, or cancel your subscription.",
             onClick: handleManage,
         },
         {
             label: "Help",
-            description: "Guides, tips, and answers to common questions.",
-            onClick: () => { onClose(); window.location.href = "/help"; },
+            onClick: () => window.open("/help", "_blank"),
         },
         {
             label: "Contact",
-            description: "Reach out to the MagXStudio team directly.",
-            onClick: () => { onClose(); window.location.href = "/contact"; },
+            onClick: () => window.open("/contact", "_blank"),
         },
     ];
 
@@ -110,13 +105,10 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                             <button
                                 key={action.label}
                                 onClick={action.onClick}
-                                className="group flex flex-col items-start w-full rounded-xl px-4 py-4 text-left transition-all duration-200 hover:bg-white/5 active:scale-[0.98]"
+                                className="group flex items-start w-full rounded-xl px-4 py-3 text-left transition-all duration-200 hover:bg-white/5 active:scale-[0.98]"
                             >
-                                <span className="text-base font-semibold text-white/90 group-hover:text-white transition-colors">
+                                <span className="text-[18px] font-semibold text-white/90 group-hover:text-white transition-colors">
                                     {action.label}
-                                </span>
-                                <span className="text-xs text-white/30 mt-0.5 leading-relaxed">
-                                    {action.description}
                                 </span>
                             </button>
                         ))}
