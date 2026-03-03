@@ -86,20 +86,23 @@ export default function HomePage() {
         kind="websites"
         userName={userName}
         active={workspace === "websites"}
+        onOpenSettings={openSettings}
       />
 
-      <AppWorkspace kind="slides" userName={userName} active={workspace === "slides"} />
+      <AppWorkspace kind="slides" userName={userName} active={workspace === "slides"} onOpenSettings={openSettings} />
       <AppWorkspace
         kind="pages"
         userName={userName}
         active={workspace === "pages"}
         incomingReferenceImage={incomingPagesImage}
         incomingReferenceImageVersion={incomingPagesImageVersion}
+        onOpenSettings={openSettings}
       />
       <VisualsWorkspace
         active={workspace === "visuals"}
         userName={userName}
         onSendToPages={handleSendVisualToPages}
+        onOpenSettings={openSettings}
       />
 
       <button

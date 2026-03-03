@@ -6,11 +6,13 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import type { ReferenceImageInput, VisualTheme, VisualAspectRatio } from "@/lib/types";
 import { useWorkspaceDraft } from "@/lib/hooks/use-workspace-draft";
+import { CreditsDisplay } from "@/components/workspaces/credits-display";
 
 type VisualsWorkspaceProps = {
   active: boolean;
   userName: string;
   onSendToPages: (image: ReferenceImageInput) => void;
+  onOpenSettings?: () => void;
 };
 
 type VisualMode = "text-to-image" | "image-to-image";
@@ -99,7 +101,7 @@ function dataUriToReferenceImage(dataUri: string, name: string): ReferenceImageI
   };
 }
 
-export function VisualsWorkspace({ active, userName, onSendToPages }: VisualsWorkspaceProps) {
+export function VisualsWorkspace({ active, userName, onSendToPages, onOpenSettings }: VisualsWorkspaceProps) {
   const [mode, setMode] = useState<VisualMode>("text-to-image");
   const [theme, setTheme] = useState<VisualTheme>("auto");
   const [aspectRatio, setAspectRatio] = useState<VisualAspectRatio | "">("");
@@ -343,7 +345,8 @@ export function VisualsWorkspace({ active, userName, onSendToPages }: VisualsWor
         </div>
       )}
 
-      <div className="flex h-11 w-full items-center justify-end border-b border-black/70 bg-[#0b0b0b] px-5 md:px-7">
+      <div className="flex h-11 w-full items-center justify-between border-b border-black/70 bg-[#0b0b0b] px-5 md:px-7">
+        <CreditsDisplay onOpenSettings={onOpenSettings} />
         <div className="flex items-center gap-4">
           {assets.length > 0 && (
             <button

@@ -52,6 +52,7 @@ import type {
 } from "@/lib/types";
 import { replaceReferenceTokens } from "@/lib/gemini";
 import { useWorkspaceDraft } from "@/lib/hooks/use-workspace-draft";
+import { CreditsDisplay } from "@/components/workspaces/credits-display";
 
 type WorkspaceKind = "websites" | "slides" | "pages" | "visuals";
 type VisualMode = "text-to-image" | "image-to-image";
@@ -606,6 +607,7 @@ type AppWorkspaceProps = {
   active: boolean;
   incomingReferenceImage?: ReferenceImageInput | null;
   incomingReferenceImageVersion?: number;
+  onOpenSettings?: () => void;
 };
 
 type WorkspaceHistorySnapshot = {
@@ -844,7 +846,8 @@ export function AppWorkspace({
   userName,
   active,
   incomingReferenceImage,
-  incomingReferenceImageVersion
+  incomingReferenceImageVersion,
+  onOpenSettings
 }: AppWorkspaceProps) {
   const isSlidesWorkspace = kind === "slides";
   const isPagesWorkspace = kind === "pages";
@@ -6016,7 +6019,8 @@ main.page-designer-flow{position:relative;width:100%;height:100%;overflow:hidden
         </div>
       )}
 
-      <div className="flex h-11 w-full items-center justify-end border-b border-black/70 bg-[#0b0b0b] px-5 md:px-7">
+      <div className="flex h-11 w-full items-center justify-between border-b border-black/70 bg-[#0b0b0b] px-5 md:px-7">
+        <CreditsDisplay onOpenSettings={onOpenSettings} />
         <div className="flex items-center gap-4">
           {isSlidesWorkspace ? (
             <select
