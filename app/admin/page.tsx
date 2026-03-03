@@ -318,7 +318,7 @@ function BlogTab() {
     const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
     return (
-        <div className="flex flex-col gap-12 w-full">
+        <div className="flex flex-col gap-12 w-full pt-[100px]">
             {/* Generator */}
             <div className="flex flex-col gap-6">
                 <h2 className="text-sm font-semibold text-white/90">Generate Blog Post</h2>
