@@ -48,7 +48,7 @@ export default function PricingPage() {
                                 </li>
                             </ul>
 
-                            <p className="text-[11px] leading-relaxed text-white/20 font-medium max-w-xs mb-12">
+                            <p className="text-[11px] leading-relaxed text-white/50 font-medium max-w-xs mb-12">
                                 Free trial includes 15 credits. Subscribe to unlock full AI generation limits and unlimited exports.
                             </p>
                         </div>
