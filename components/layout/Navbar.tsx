@@ -33,7 +33,7 @@ export function Navbar() {
                         Pricing
                     </Link>
                     <Link
-                        href="/workspace"
+                        href="/signup"
                         className="text-base font-semibold text-white/90 transition-all duration-300 hover:text-white hover:scale-105 active:scale-95"
                     >
                         Try It Now
@@ -58,7 +58,7 @@ export function Navbar() {
 
             <button
                 className="magnetic-button rounded-full bg-white px-8 py-3 text-base font-bold text-black shadow-xl hover:scale-105 transition-all duration-300"
-                onClick={() => window.location.href = '/workspace'}
+                onClick={() => window.location.href = '/signup'}
             >
                 Get Started
             </button>

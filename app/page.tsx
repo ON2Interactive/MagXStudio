@@ -142,7 +142,7 @@ export default function LandingPage() {
                     </p>
                     <div className="flex justify-center">
                         <a
-                            href="/workspace"
+                            href="/signup"
                             className="px-10 py-3 rounded-xl border border-white/40 text-white font-semibold hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-sm"
                         >
                             Try It Now
