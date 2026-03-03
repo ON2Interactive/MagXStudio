@@ -21,6 +21,7 @@ type EmailModal = {
 export default function AdminPage() {
     const router = useRouter();
     const [users, setUsers] = useState<AdminUser[]>([]);
+    const [search, setSearch] = useState("");
     const [edits, setEdits] = useState<Record<string, { username: string; credits: number }>>({});
     const [loading, setLoading] = useState(true);
     const [emailModal, setEmailModal] = useState<EmailModal>(null);
@@ -94,6 +95,18 @@ export default function AdminPage() {
 
             {/* Content */}
             <div className="px-6 pb-12">
+                {/* Search */}
+                <div style={{ marginTop: "100px" }} className="mb-4">
+                    <input
+                        type="text"
+                        placeholder="Search by email or username…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full max-w-sm bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-white/30 placeholder:text-white/25"
+                    />
+                </div>
+
+                {/* Table */}
                 <div className="border border-white/10 rounded-lg overflow-hidden">
                     {/* Table Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
@@ -119,46 +132,51 @@ export default function AdminPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {users.map((user) => (
-                                    <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
-                                        <td className="px-4 py-3 text-white/70 text-xs">{user.email}</td>
-                                        <td className="px-4 py-3">
-                                            <input
-                                                type="text"
-                                                value={edits[user.id]?.username ?? ""}
-                                                onChange={(e) => setEdits((prev) => ({ ...prev, [user.id]: { ...prev[user.id], username: e.target.value } }))}
-                                                className="w-36 bg-white/5 border border-white/10 text-white text-xs px-2 py-1 rounded focus:outline-none focus:border-white/30"
-                                            />
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <input
-                                                type="number"
-                                                value={edits[user.id]?.credits ?? 0}
-                                                onChange={(e) => setEdits((prev) => ({ ...prev, [user.id]: { ...prev[user.id], credits: Number(e.target.value) } }))}
-                                                className="w-20 bg-white/5 border border-white/10 text-white text-xs px-2 py-1 rounded focus:outline-none focus:border-white/30"
-                                            />
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className={`text-xs font-medium ${user.status === "active" ? "text-green-400" : "text-white/30"}`}>
-                                                {user.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-xs text-white/40">{fmt(user.created)}</td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
-                                                <button onClick={() => openEmailModal(user)} title="Send email" className="text-white/40 hover:text-white transition-colors">
-                                                    <Mail className="h-4 w-4" />
-                                                </button>
-                                                <button onClick={() => handleSave(user.id)} title="Save" className="text-xs text-white/50 hover:text-white transition-colors">
-                                                    Save
-                                                </button>
-                                                <button onClick={() => handleDelete(user.id, user.email)} title="Delete user" className="text-white/30 hover:text-red-400 transition-colors">
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {users
+                                    .filter((u) => {
+                                        const q = search.toLowerCase();
+                                        return u.email.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
+                                    })
+                                    .map((user) => (
+                                        <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
+                                            <td className="px-4 py-3 text-white/70 text-xs">{user.email}</td>
+                                            <td className="px-4 py-3">
+                                                <input
+                                                    type="text"
+                                                    value={edits[user.id]?.username ?? ""}
+                                                    onChange={(e) => setEdits((prev) => ({ ...prev, [user.id]: { ...prev[user.id], username: e.target.value } }))}
+                                                    className="w-36 bg-white/5 border border-white/10 text-white text-xs px-2 py-1 rounded focus:outline-none focus:border-white/30"
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <input
+                                                    type="number"
+                                                    value={edits[user.id]?.credits ?? 0}
+                                                    onChange={(e) => setEdits((prev) => ({ ...prev, [user.id]: { ...prev[user.id], credits: Number(e.target.value) } }))}
+                                                    className="w-20 bg-white/5 border border-white/10 text-white text-xs px-2 py-1 rounded focus:outline-none focus:border-white/30"
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className={`text-xs font-medium ${user.status === "active" ? "text-green-400" : "text-white/30"}`}>
+                                                    {user.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-xs text-white/40">{fmt(user.created)}</td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => openEmailModal(user)} title="Send email" className="text-white/40 hover:text-white transition-colors">
+                                                        <Mail className="h-4 w-4" />
+                                                    </button>
+                                                    <button onClick={() => handleSave(user.id)} title="Save" className="text-xs text-white/50 hover:text-white transition-colors">
+                                                        Save
+                                                    </button>
+                                                    <button onClick={() => handleDelete(user.id, user.email)} title="Delete user" className="text-white/30 hover:text-red-400 transition-colors">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
                             </tbody>
                         </table>
                     )}
