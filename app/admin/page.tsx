@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Trash2, X, RefreshCcw, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -316,65 +318,54 @@ function BlogTab() {
     const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
     return (
-        <div style={{ marginTop: "100px" }} className="flex flex-col gap-8 max-w-[1200px] mx-auto w-full">
+        <div className="flex flex-col gap-12 w-full">
             {/* Generator */}
-            <div className="border border-white/10 rounded-lg p-6 flex flex-col gap-5">
-                <h2 className="text-sm font-semibold">Generate Blog Post</h2>
+            <div className="flex flex-col gap-6">
+                <h2 className="text-sm font-semibold text-white/90">Generate Blog Post</h2>
 
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-white/70">Topic / Title</label>
-                    <input
-                        type="text"
-                        placeholder="e.g. How AI is changing web design in 2026"
-                        value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-white/30 placeholder:text-white/20"
-                    />
-                </div>
+                <Input
+                    placeholder="Topic / Title (e.g. How AI is changing web design)"
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                />
 
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-white/70">Tone</label>
+                <Input
+                    type="url"
+                    placeholder="Reference URL (Optional inspiration link)"
+                    value={referenceUrl}
+                    onChange={(e) => setReferenceUrl(e.target.value)}
+                />
+
+                <Textarea
+                    placeholder="Specific Instructions / Context (Optional)..."
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    rows={1}
+                    className="min-h-[40px]"
+                />
+
+                <div className="flex flex-col gap-3">
+                    <label className="text-[10px] uppercase tracking-wider text-white/30 font-bold">Tone</label>
                     <div className="flex flex-wrap gap-2">
                         {TONES.map((t) => (
                             <button key={t} onClick={() => setTone(t)}
-                                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${tone === t ? "bg-white/15 text-white" : "text-white/40 hover:text-white bg-white/5"}`}>
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${tone === t ? "bg-white text-black" : "text-white/40 hover:text-white bg-white/5"}`}>
                                 {t}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-white/70">Reference URL (Optional)</label>
-                    <input
-                        type="url"
-                        placeholder="https://example.com/inspiration"
-                        value={referenceUrl}
-                        onChange={(e) => setReferenceUrl(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-white/30 placeholder:text-white/20"
-                    />
+                <div className="flex items-center justify-between mt-2">
+                    <button onClick={handleGenerate} disabled={generating || !topic.trim()}
+                        className="flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition-colors disabled:opacity-40">
+                        {generating && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {generating ? "Generating…" : "Generate →"}
+                    </button>
+                    {generateError && (
+                        <p className="text-xs text-red-400">{generateError}</p>
+                    )}
                 </div>
-
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-white/70">Specific Instructions / Context (Optional)</label>
-                    <textarea
-                        placeholder="e.g. Focus on white space, mention our new feature, use a minimalist aesthetic description..."
-                        value={customPrompt}
-                        onChange={(e) => setCustomPrompt(e.target.value)}
-                        rows={3}
-                        className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-white/30 placeholder:text-white/10 resize-none"
-                    />
-                </div>
-
-
-                <button onClick={handleGenerate} disabled={generating || !topic.trim()}
-                    className="flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition-colors disabled:opacity-40 w-fit">
-                    {generating && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {generating ? "Generating…" : "Generate →"}
-                </button>
-                {generateError && (
-                    <p className="text-xs text-red-400">{generateError}</p>
-                )}
             </div>
 
             {/* Editor (shows when content exists or editing) */}
