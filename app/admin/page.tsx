@@ -2,23 +2,59 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Trash2, Save, X, RefreshCcw } from "lucide-react";
+import { Mail, Trash2, X, RefreshCcw, Loader2 } from "lucide-react";
 
-type AdminUser = {
-    id: string;
-    email: string;
-    username: string;
-    credits: number;
-    status: string;
-    created: string;
-};
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-type EmailModal = {
-    email: string;
-    firstName: string;
-} | null;
+type AdminUser = { id: string; email: string; username: string; credits: number; status: string; created: string };
+type EmailModal = { email: string; firstName: string } | null;
+type BlogPost = { id: string; title: string; slug: string; status: string; created_at: string };
+type Tab = "users" | "blog";
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
+    const router = useRouter();
+    const [tab, setTab] = useState<Tab>("users");
+
+    const handleLogout = async () => {
+        await fetch("/api/admin/logout", { method: "POST" });
+        router.push("/adminlogin");
+    };
+
+    return (
+        <div className="min-h-screen bg-black text-white font-sans">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-6">
+                <div className="flex items-center gap-6">
+                    <h1 className="text-2xl font-bold">Admin</h1>
+                    <div className="flex items-center gap-1">
+                        {(["users", "blog"] as Tab[]).map((t) => (
+                            <button
+                                key={t}
+                                onClick={() => setTab(t)}
+                                className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${tab === t ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <button onClick={handleLogout} className="text-sm text-white/50 hover:text-white transition-colors">
+                    Log Out
+                </button>
+            </div>
+
+            <div className="px-6 pb-12">
+                {tab === "users" ? <UsersTab /> : <BlogTab />}
+            </div>
+        </div>
+    );
+}
+
+// ─── Users Tab ────────────────────────────────────────────────────────────────
+
+function UsersTab() {
     const router = useRouter();
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [search, setSearch] = useState("");
@@ -45,27 +81,14 @@ export default function AdminPage() {
     const handleSave = async (userId: string) => {
         const edit = edits[userId];
         if (!edit) return;
-        await fetch("/api/admin/users", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: userId, username: edit.username, credits: edit.credits }),
-        });
+        await fetch("/api/admin/users", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: userId, ...edit }) });
         await fetchUsers();
     };
 
     const handleDelete = async (userId: string, email: string) => {
         if (!confirm(`Delete user ${email}? This cannot be undone.`)) return;
-        await fetch("/api/admin/users", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: userId }),
-        });
+        await fetch("/api/admin/users", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: userId }) });
         await fetchUsers();
-    };
-
-    const handleLogout = async () => {
-        await fetch("/api/admin/logout", { method: "POST" });
-        router.push("/adminlogin");
     };
 
     const openEmailModal = (user: AdminUser) => {
@@ -82,105 +105,68 @@ export default function AdminPage() {
     };
 
     const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric" });
+    const filtered = users.filter((u) => { const q = search.toLowerCase(); return u.email.toLowerCase().includes(q) || u.username.toLowerCase().includes(q); });
 
     return (
-        <div className="min-h-screen bg-black text-white font-sans">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-6">
-                <h1 className="text-2xl font-bold">Admin</h1>
-                <button onClick={handleLogout} className="text-sm text-white/50 hover:text-white transition-colors">
-                    Log Out
-                </button>
+        <>
+            {/* Search */}
+            <div style={{ marginTop: "100px" }} className="mb-4">
+                <input
+                    type="text"
+                    placeholder="Search by email or username…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full max-w-sm bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-white/30 placeholder:text-white/25"
+                />
             </div>
 
-            {/* Content */}
-            <div className="px-6 pb-12">
-                {/* Search */}
-                <div style={{ marginTop: "100px" }} className="mb-4">
-                    <input
-                        type="text"
-                        placeholder="Search by email or username…"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full max-w-sm bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-white/30 placeholder:text-white/25"
-                    />
+            <div className="border border-white/10 rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                    <span className="text-sm font-semibold">Users</span>
+                    <button onClick={fetchUsers} className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors">
+                        <RefreshCcw className="h-3 w-3" />Refresh
+                    </button>
                 </div>
 
-                {/* Table */}
-                <div className="border border-white/10 rounded-lg overflow-hidden">
-                    {/* Table Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                        <span className="text-sm font-semibold">Users</span>
-                        <button onClick={fetchUsers} className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors">
-                            <RefreshCcw className="h-3 w-3" />
-                            Refresh
-                        </button>
-                    </div>
-
-                    {loading ? (
-                        <div className="py-16 text-center text-sm text-white/30">Loading…</div>
-                    ) : (
-                        <table className="w-full text-left text-sm">
-                            <thead>
-                                <tr className="border-b border-white/10">
-                                    <th className="px-4 py-3 text-xs font-medium text-white/40">Email</th>
-                                    <th className="px-4 py-3 text-xs font-medium text-white/40">Username</th>
-                                    <th className="px-4 py-3 text-xs font-medium text-white/40">Credits</th>
-                                    <th className="px-4 py-3 text-xs font-medium text-white/40">Status</th>
-                                    <th className="px-4 py-3 text-xs font-medium text-white/40">Created</th>
-                                    <th className="px-4 py-3 text-xs font-medium text-white/40">Actions</th>
+                {loading ? (
+                    <div className="py-16 text-center text-sm text-white/30">Loading…</div>
+                ) : (
+                    <table className="w-full text-left text-sm">
+                        <thead>
+                            <tr className="border-b border-white/10">
+                                {["Email", "Username", "Credits", "Status", "Created", "Actions"].map((h) => (
+                                    <th key={h} className="px-4 py-3 text-xs font-medium text-white/40">{h}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {filtered.map((user) => (
+                                <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
+                                    <td className="px-4 py-3 text-white/70 text-xs">{user.email}</td>
+                                    <td className="px-4 py-3">
+                                        <input type="text" value={edits[user.id]?.username ?? ""} onChange={(e) => setEdits((p) => ({ ...p, [user.id]: { ...p[user.id], username: e.target.value } }))}
+                                            className="w-36 bg-white/5 border border-white/10 text-white text-xs px-2 py-1 rounded focus:outline-none focus:border-white/30" />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <input type="number" value={edits[user.id]?.credits ?? 0} onChange={(e) => setEdits((p) => ({ ...p, [user.id]: { ...p[user.id], credits: Number(e.target.value) } }))}
+                                            className="w-20 bg-white/5 border border-white/10 text-white text-xs px-2 py-1 rounded focus:outline-none focus:border-white/30" />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className={`text-xs font-medium ${user.status === "active" ? "text-green-400" : "text-white/30"}`}>{user.status}</span>
+                                    </td>
+                                    <td className="px-4 py-3 text-xs text-white/40">{fmt(user.created)}</td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => openEmailModal(user)} className="text-white/40 hover:text-white transition-colors"><Mail className="h-4 w-4" /></button>
+                                            <button onClick={() => handleSave(user.id)} className="text-xs text-white/50 hover:text-white transition-colors">Save</button>
+                                            <button onClick={() => handleDelete(user.id, user.email)} className="text-white/30 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                                        </div>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {users
-                                    .filter((u) => {
-                                        const q = search.toLowerCase();
-                                        return u.email.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
-                                    })
-                                    .map((user) => (
-                                        <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
-                                            <td className="px-4 py-3 text-white/70 text-xs">{user.email}</td>
-                                            <td className="px-4 py-3">
-                                                <input
-                                                    type="text"
-                                                    value={edits[user.id]?.username ?? ""}
-                                                    onChange={(e) => setEdits((prev) => ({ ...prev, [user.id]: { ...prev[user.id], username: e.target.value } }))}
-                                                    className="w-36 bg-white/5 border border-white/10 text-white text-xs px-2 py-1 rounded focus:outline-none focus:border-white/30"
-                                                />
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <input
-                                                    type="number"
-                                                    value={edits[user.id]?.credits ?? 0}
-                                                    onChange={(e) => setEdits((prev) => ({ ...prev, [user.id]: { ...prev[user.id], credits: Number(e.target.value) } }))}
-                                                    className="w-20 bg-white/5 border border-white/10 text-white text-xs px-2 py-1 rounded focus:outline-none focus:border-white/30"
-                                                />
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <span className={`text-xs font-medium ${user.status === "active" ? "text-green-400" : "text-white/30"}`}>
-                                                    {user.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 text-xs text-white/40">{fmt(user.created)}</td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <button onClick={() => openEmailModal(user)} title="Send email" className="text-white/40 hover:text-white transition-colors">
-                                                        <Mail className="h-4 w-4" />
-                                                    </button>
-                                                    <button onClick={() => handleSave(user.id)} title="Save" className="text-xs text-white/50 hover:text-white transition-colors">
-                                                        Save
-                                                    </button>
-                                                    <button onClick={() => handleDelete(user.id, user.email)} title="Delete user" className="text-white/30 hover:text-red-400 transition-colors">
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             {/* Email Modal */}
@@ -189,52 +175,209 @@ export default function AdminPage() {
                     <div className="bg-[#111] border border-white/10 rounded-xl w-full max-w-md p-6 shadow-2xl">
                         <div className="flex items-center justify-between mb-5">
                             <h2 className="text-base font-semibold">Send Email</h2>
-                            <button onClick={() => setEmailModal(null)} className="text-white/40 hover:text-white transition-colors">
-                                <X className="h-4 w-4" />
-                            </button>
+                            <button onClick={() => setEmailModal(null)} className="text-white/40 hover:text-white transition-colors"><X className="h-4 w-4" /></button>
                         </div>
-
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-xs text-white/50">To</label>
-                                <input
-                                    type="email"
-                                    value={emailModal.email}
-                                    readOnly
-                                    className="w-full bg-white/5 border border-white/10 text-white/70 text-sm px-3 py-2 rounded focus:outline-none"
-                                />
+                                <input type="email" value={emailModal.email} readOnly className="w-full bg-white/5 border border-white/10 text-white/70 text-sm px-3 py-2 rounded" />
                             </div>
-
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-xs text-white/50">Subject</label>
-                                <input
-                                    type="text"
-                                    value={emailSubject}
-                                    onChange={(e) => setEmailSubject(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-blue-500/50"
-                                />
+                                <input type="text" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-blue-500/50" />
                             </div>
-
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-xs text-white/50">Message</label>
-                                <textarea
-                                    value={emailBody}
-                                    onChange={(e) => setEmailBody(e.target.value)}
-                                    rows={6}
-                                    className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-blue-500/50 resize-none"
-                                />
+                                <textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-blue-500/50 resize-none" />
                             </div>
-
-                            <button
-                                onClick={handleSendEmail}
-                                className="text-sm font-semibold text-white/80 hover:text-white transition-colors text-left"
-                            >
-                                Send Email
-                            </button>
+                            <button onClick={handleSendEmail} className="text-sm font-semibold text-white/80 hover:text-white transition-colors text-left">Send Email</button>
                         </div>
                     </div>
                 </div>
             )}
+        </>
+    );
+}
+
+// ─── Blog Tab ─────────────────────────────────────────────────────────────────
+
+const TONES = ["Informative", "Technical", "Marketing", "Casual"];
+
+function BlogTab() {
+    const [topic, setTopic] = useState("");
+    const [tone, setTone] = useState("Informative");
+    const [generating, setGenerating] = useState(false);
+    const [title, setTitle] = useState("");
+    const [slug, setSlug] = useState("");
+    const [content, setContent] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [posts, setPosts] = useState<BlogPost[]>([]);
+    const [loadingPosts, setLoadingPosts] = useState(true);
+
+    const fetchPosts = async () => {
+        setLoadingPosts(true);
+        const res = await fetch("/api/admin/blog");
+        const data = await res.json() as { posts: BlogPost[] };
+        setPosts(data.posts ?? []);
+        setLoadingPosts(false);
+    };
+
+    useEffect(() => { fetchPosts(); }, []);
+
+    const handleGenerate = async () => {
+        if (!topic.trim()) return;
+        setGenerating(true);
+        setContent("");
+        try {
+            const res = await fetch("/api/admin/blog/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ topic, tone }),
+            });
+            const data = await res.json() as { title: string; slug: string; content: string };
+            setTitle(data.title);
+            setSlug(data.slug);
+            setContent(data.content);
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    const handleSave = async (status: "draft" | "published") => {
+        if (!title || !content) return;
+        setSaving(true);
+        await fetch("/api/admin/blog", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, slug, content, status }),
+        });
+        setSaving(false);
+        setTopic(""); setTitle(""); setSlug(""); setContent("");
+        await fetchPosts();
+    };
+
+    const handleDeletePost = async (id: string) => {
+        if (!confirm("Delete this post?")) return;
+        await fetch("/api/admin/blog", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+        await fetchPosts();
+    };
+
+    const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+    return (
+        <div style={{ marginTop: "100px" }} className="flex flex-col gap-8 max-w-3xl">
+            {/* Generator */}
+            <div className="border border-white/10 rounded-lg p-6 flex flex-col gap-5">
+                <h2 className="text-sm font-semibold">Generate Blog Post</h2>
+
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-white/50">Topic / Title</label>
+                    <input
+                        type="text"
+                        placeholder="e.g. How AI is changing web design in 2026"
+                        value={topic}
+                        onChange={(e) => setTopic(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-white/30 placeholder:text-white/20"
+                    />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-white/50">Tone</label>
+                    <div className="flex flex-wrap gap-2">
+                        {TONES.map((t) => (
+                            <button key={t} onClick={() => setTone(t)}
+                                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${tone === t ? "bg-white/15 text-white" : "text-white/40 hover:text-white bg-white/5"}`}>
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <button onClick={handleGenerate} disabled={generating || !topic.trim()}
+                    className="flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition-colors disabled:opacity-40 w-fit">
+                    {generating && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {generating ? "Generating…" : "Generate →"}
+                </button>
+            </div>
+
+            {/* Editor (shows after generation) */}
+            {content && (
+                <div className="border border-white/10 rounded-lg p-6 flex flex-col gap-5">
+                    <h2 className="text-sm font-semibold">Edit & Publish</h2>
+
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-white/50">Title</label>
+                        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-white/30" />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-white/50">Slug</label>
+                        <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 text-white/60 text-xs px-3 py-2 rounded focus:outline-none focus:border-white/30 font-mono" />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-white/50">Content (Markdown)</label>
+                        <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={20}
+                            className="w-full bg-white/5 border border-white/10 text-white text-xs px-3 py-2 rounded focus:outline-none focus:border-white/30 resize-y font-mono leading-relaxed" />
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => handleSave("draft")} disabled={saving}
+                            className="text-xs font-medium text-white/50 hover:text-white transition-colors disabled:opacity-40">
+                            Save as Draft
+                        </button>
+                        <button onClick={() => handleSave("published")} disabled={saving}
+                            className="text-sm font-semibold text-white hover:text-white/70 transition-colors disabled:opacity-40">
+                            {saving ? "Publishing…" : "Publish →"}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Post List */}
+            <div className="border border-white/10 rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                    <span className="text-sm font-semibold">Posts</span>
+                    <button onClick={fetchPosts} className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors">
+                        <RefreshCcw className="h-3 w-3" />Refresh
+                    </button>
+                </div>
+                {loadingPosts ? (
+                    <div className="py-10 text-center text-sm text-white/30">Loading…</div>
+                ) : posts.length === 0 ? (
+                    <div className="py-10 text-center text-sm text-white/20">No posts yet.</div>
+                ) : (
+                    <table className="w-full text-left text-sm">
+                        <thead>
+                            <tr className="border-b border-white/10">
+                                {["Title", "Slug", "Status", "Created", ""].map((h, i) => (
+                                    <th key={i} className="px-4 py-3 text-xs font-medium text-white/40">{h}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {posts.map((post) => (
+                                <tr key={post.id} className="hover:bg-white/[0.02] transition-colors">
+                                    <td className="px-4 py-3 text-white/80 text-xs max-w-[220px] truncate">{post.title}</td>
+                                    <td className="px-4 py-3 text-white/30 text-xs font-mono max-w-[160px] truncate">{post.slug}</td>
+                                    <td className="px-4 py-3">
+                                        <span className={`text-xs font-medium ${post.status === "published" ? "text-green-400" : "text-white/30"}`}>{post.status}</span>
+                                    </td>
+                                    <td className="px-4 py-3 text-xs text-white/40">{fmt(post.created_at)}</td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-3">
+                                            <a href={`/blog/${post.slug}`} target="_blank" rel="noreferrer" className="text-xs text-white/30 hover:text-white transition-colors">View</a>
+                                            <button onClick={() => handleDeletePost(post.id)} className="text-white/30 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
         </div>
     );
 }
