@@ -181,15 +181,15 @@ function UsersTab() {
                         </div>
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-xs text-white/50">To</label>
+                                <label className="text-xs text-white/70">To</label>
                                 <input type="email" value={emailModal.email} readOnly className="w-full bg-white/5 border border-white/10 text-white/70 text-sm px-3 py-2 rounded" />
                             </div>
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-xs text-white/50">Subject</label>
+                                <label className="text-xs text-white/70">Subject</label>
                                 <input type="text" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-blue-500/50" />
                             </div>
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-xs text-white/50">Message</label>
+                                <label className="text-xs text-white/70">Message</label>
                                 <textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-blue-500/50 resize-none" />
                             </div>
                             <button onClick={handleSendEmail} className="text-sm font-semibold text-white/80 hover:text-white transition-colors text-left">Send Email</button>
@@ -299,7 +299,7 @@ function BlogTab() {
                 <h2 className="text-sm font-semibold">Generate Blog Post</h2>
 
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-white/50">Topic / Title</label>
+                    <label className="text-xs text-white/70">Topic / Title</label>
                     <input
                         type="text"
                         placeholder="e.g. How AI is changing web design in 2026"
@@ -310,7 +310,7 @@ function BlogTab() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-white/50">Tone</label>
+                    <label className="text-xs text-white/70">Tone</label>
                     <div className="flex flex-wrap gap-2">
                         {TONES.map((t) => (
                             <button key={t} onClick={() => setTone(t)}
@@ -339,20 +339,20 @@ function BlogTab() {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-xs text-white/50">Title</label>
+                        <label className="text-xs text-white/70">Title</label>
                         <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-white/30" />
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-xs text-white/50">Slug</label>
+                        <label className="text-xs text-white/70">Slug</label>
                         <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 text-white/60 text-xs px-3 py-2 rounded focus:outline-none focus:border-white/30 font-mono" />
                     </div>
 
                     {/* Cover Image */}
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-xs text-white/50">Cover Image</label>
+                        <label className="text-xs text-white/70">Cover Image</label>
                         <div className="flex items-center gap-3">
                             <label className="cursor-pointer text-xs text-white/50 hover:text-white transition-colors border border-white/10 px-3 py-1.5 rounded">
                                 Upload
@@ -398,7 +398,7 @@ function BlogTab() {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-xs text-white/50">Content (Markdown)</label>
+                        <label className="text-xs text-white/70">Content (Markdown)</label>
                         <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={20}
                             className="w-full bg-white/5 border border-white/10 text-white text-xs px-3 py-2 rounded focus:outline-none focus:border-white/30 resize-y font-mono leading-relaxed" />
                     </div>
