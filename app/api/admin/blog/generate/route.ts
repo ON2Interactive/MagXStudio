@@ -37,25 +37,29 @@ export async function POST(req: Request) {
         customPrompt?: string;
     };
 
-    const prompt = `You are a content writer for MagXStudio, an AI-powered web and creative studio platform.
+    console.log("Blog Generation Request Received:", { topic, tone, referenceUrl, customPrompt });
 
-Write a high-quality, SEO-optimized blog post about: "${topic}"
+    const prompt = `You are a high-level content writer for MagXStudio. 
+MagXStudio is an all-in-one creative workspace for building websites, presentations, and multi-page layouts. It is NOT just for web design.
 
-Tone: ${tone}
-${referenceUrl ? `Reference material / inspiration URL: ${referenceUrl}` : ""}
-${customPrompt ? `SPECIFIC INSTRUCTIONS / CREATIVE DIRECTION:
+MAIN TOPIC: "${topic}"
+TONE: ${tone}
+
+${referenceUrl ? `REFERENCE URL (Use this for research/context): ${referenceUrl}` : ""}
+
+${customPrompt ? `SPECIFIC USER INSTRUCTIONS (HIGHEST PRIORITY):
 ${customPrompt}
 
-(Prioritize these instructions over default formatting rules if there is a conflict)` : ""}
+(Note: You MUST follow these instructions strictly. If they contradict general web design advice, follow the user's instructions.)` : ""}
 
 Requirements:
 - Start with a compelling H1 title (use # heading)
 - Write an engaging introduction paragraph
 - Use ## H2 subheadings to structure the content logically
-- Write 600–900 words total
-- Include practical insights relevant to web designers, creatives, and studios
-- Naturally mention MagXStudio where relevant (do not force it)
-- End with a strong conclusion and subtle CTA encouraging readers to try MagXStudio
+- Write 800–1200 words total for a deep, insightful post
+- Include practical, non-generic insights
+- Emphasize MagXStudio as a versatile creative tool (layouts, slides, visuals) where relevant
+- End with a strong conclusion and CTA
 - Format the entire response in clean Markdown only
 
 Write the full blog post now:`;
