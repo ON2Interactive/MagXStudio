@@ -22,7 +22,7 @@ export function sendWelcomeEmail(to: string, name: string) {
         `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#333;line-height:1.6;font-size:16px;">
             <p>Hey ${firstName},</p>
-            <p>Welcome to MagXStudio. Your account is ready, and you're starting with <strong>10 free credits</strong> — enough to generate your first sites and visuals.</p>
+            <p>Welcome to MagXStudio. Your account is ready, and you're starting with <strong>15 free credits</strong> — enough to generate your first sites and visuals.</p>
             <p><a href="https://magxstudio.com/workspace" style="color:#000;font-weight:bold;text-decoration:underline;">Open your Workspace →</a></p>
             <p style="margin-top:40px;color:#888;font-size:12px;">MagXStudio · <a href="https://magxstudio.com/unsubscribe" style="color:#888;">Unsubscribe</a></p>
         </div>

@@ -30,7 +30,7 @@ export default function PricingPage() {
                             </div>
 
                             <p className="text-sm font-bold text-white mb-8">
-                                Credits top-up: $20 for 200 credits
+                                Credits top-up: $10 for 100 credits
                             </p>
 
                             <ul className="space-y-3 mb-12 text-sm text-white/50 font-medium">
@@ -38,7 +38,7 @@ export default function PricingPage() {
                                     Subscription includes 200 credits every month
                                 </li>
                                 <li className="leading-relaxed">
-                                    AI image generation, edit, and vector art use 10 credits each
+                                    AI sites/slides cost 10, pages 5, and visuals 2 credits
                                 </li>
                                 <li className="leading-relaxed">
                                     Export to HTML, PDF, and images included with subscription
@@ -49,7 +49,7 @@ export default function PricingPage() {
                             </ul>
 
                             <p className="text-[11px] leading-relaxed text-white/20 font-medium max-w-xs mb-12">
-                                Free trial is workspace-only. Subscribe to unlock AI generation, edits, vector art, and export.
+                                Free trial includes 15 credits. Subscribe to unlock full AI generation limits and unlimited exports.
                             </p>
                         </div>
 

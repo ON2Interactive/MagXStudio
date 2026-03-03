@@ -4,6 +4,8 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 
+const TOP_UP_PRICE_ID = "price_1T6wtsPKoJ7Z0f639J0RogcH";
+
 type SettingsModalProps = {
     open: boolean;
     onClose: () => void;
@@ -51,6 +53,21 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
         if (url) window.location.href = url;
     };
 
+    const handleBuyCredits = async () => {
+        const res = await fetch("/api/stripe/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ priceId: TOP_UP_PRICE_ID }),
+        });
+        if (res.status === 401) {
+            onClose();
+            window.location.href = "/signup?next=/workspace";
+            return;
+        }
+        const { url } = await res.json() as { url: string };
+        if (url) window.location.href = url;
+    };
+
     const actions: MenuAction[] = [
         {
             label: "Subscribe",
@@ -59,6 +76,10 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
         {
             label: "Manage",
             onClick: handleManage,
+        },
+        {
+            label: "Buy Credits ($10)",
+            onClick: handleBuyCredits,
         },
         {
             label: "Help",

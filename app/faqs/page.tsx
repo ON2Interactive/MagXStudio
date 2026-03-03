@@ -30,13 +30,13 @@ export default function FAQPage() {
             question: "How does pricing work?",
             answer: (
                 <>
-                    MagXStudio Pro is $24.99 per month. Your subscription includes 200 credits every month, plus full access to all four workspaces and export capabilities. You can top up credits at any time for $20 per 200 credits. Full details are on the <Link href="/pricing" className="underline hover:text-white transition-colors">Pricing</Link> page.
+                    MagXStudio Pro is $24.99 per month. Your subscription includes 200 credits every month, plus full access to all four workspaces and export capabilities. You can top up credits at any time for $10 per 100 credits. Full details are on the <Link href="/pricing" className="underline hover:text-white transition-colors">Pricing</Link> page.
                 </>
             )
         },
         {
             question: "What are credits used for?",
-            answer: "Credits power AI actions inside MagXStudio. Image generation, image editing, and vector art generation each use 10 credits. Standard workspace features — canvas design, layout tools, text editing, and presentation building — do not use credits and are available with your subscription."
+            answer: "Credits power AI actions inside MagXStudio. Site/Slide generation costs 10 credits, Page designs cost 5 credits, and Visuals (images) cost 2 credits. Standard workspace features — canvas design, layout tools, text editing, and presentation building — do not use credits and are available with your subscription."
         },
         {
             question: "Do credits roll over or expire?",
@@ -56,7 +56,7 @@ export default function FAQPage() {
         },
         {
             question: "What's included in the free trial?",
-            answer: "The free trial gives you full access to the workspace environment — canvas tools, layout features, presentation building, and page design. AI generation, image editing, vector art, and export require an active subscription."
+            answer: "The free trial gives you full access to the workspace environment — canvas tools, layout features, presentation building, and page design — plus 15 free credits to test out site and image generation. Once depleted, an active subscription is required to continue using AI features and to unlock export."
         },
         {
             question: "Can I use MagXStudio for commercial and client work?",

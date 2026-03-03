@@ -27,6 +27,7 @@ export default function HelpPage() {
                 "Select from 20+ design categories — SaaS, editorial, portfolio, e-commerce, and more",
                 "Enter a prompt describing your site's purpose and tone",
                 "Review the generated layout and refine sections as needed",
+                "Sites and Slides generation each use 10 credits per action",
                 "Export as HTML when ready"
             ]
         },
@@ -48,6 +49,7 @@ export default function HelpPage() {
                 "Enable column grids and set gutters for editorial structure",
                 "Place text, images, and AI-generated assets on the canvas",
                 "Manage multiple pages from the page panel",
+                "Page designs and AI layout generation each use 5 credits per action",
                 "Export as PDF or image"
             ]
         },
@@ -59,7 +61,7 @@ export default function HelpPage() {
                 "Select a variation and remix it to refine composition, style, or tone",
                 "Download high-resolution images for print or digital use",
                 "Send any visual directly to the Pages canvas with automatic placement",
-                "Image generation, editing, and vector art each use 10 credits per action"
+                "Image generation and remixing each use 2 credits per action"
             ]
         },
         {
@@ -69,6 +71,8 @@ export default function HelpPage() {
                 "Sites export as HTML",
                 "Pages and Slides export as PDF",
                 "Generated images download as high-resolution files",
+                "Subscription includes 200 credits every month",
+                "Top up extra credits any time ($10 for 100 credits)",
                 "No per-export fees — export as often as you need"
             ]
         },
