@@ -218,6 +218,8 @@ function BlogTab() {
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState("");
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [referenceUrl, setReferenceUrl] = useState("");
+    const [customPrompt, setCustomPrompt] = useState("");
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [loadingPosts, setLoadingPosts] = useState(true);
 
@@ -240,7 +242,7 @@ function BlogTab() {
             const res = await fetch("/api/admin/blog/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ topic, tone }),
+                body: JSON.stringify({ topic, tone, referenceUrl, customPrompt }),
             });
             const data = await res.json() as { title: string; slug: string; content: string; error?: string };
             if (!res.ok || data.error) {
@@ -341,6 +343,29 @@ function BlogTab() {
                         ))}
                     </div>
                 </div>
+
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-white/70">Reference URL (Optional)</label>
+                    <input
+                        type="url"
+                        placeholder="https://example.com/inspiration"
+                        value={referenceUrl}
+                        onChange={(e) => setReferenceUrl(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-white/30 placeholder:text-white/20"
+                    />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-white/70">Specific Instructions / Context (Optional)</label>
+                    <textarea
+                        placeholder="e.g. Focus on white space, mention our new feature, use a minimalist aesthetic description..."
+                        value={customPrompt}
+                        onChange={(e) => setCustomPrompt(e.target.value)}
+                        rows={3}
+                        className="w-full bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded focus:outline-none focus:border-white/30 placeholder:text-white/10 resize-none"
+                    />
+                </div>
+
 
                 <button onClick={handleGenerate} disabled={generating || !topic.trim()}
                     className="flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition-colors disabled:opacity-40 w-fit">

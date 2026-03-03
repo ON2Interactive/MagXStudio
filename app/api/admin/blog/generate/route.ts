@@ -30,13 +30,23 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Missing GEMINI_API_KEY" }, { status: 500 });
     }
 
-    const { topic, tone } = await req.json() as { topic: string; tone: string };
+    const { topic, tone, referenceUrl, customPrompt } = await req.json() as {
+        topic: string;
+        tone: string;
+        referenceUrl?: string;
+        customPrompt?: string;
+    };
 
     const prompt = `You are a content writer for MagXStudio, an AI-powered web and creative studio platform.
 
 Write a high-quality, SEO-optimized blog post about: "${topic}"
 
 Tone: ${tone}
+${referenceUrl ? `Reference material / inspiration URL: ${referenceUrl}` : ""}
+${customPrompt ? `SPECIFIC INSTRUCTIONS / CREATIVE DIRECTION:
+${customPrompt}
+
+(Prioritize these instructions over default formatting rules if there is a conflict)` : ""}
 
 Requirements:
 - Start with a compelling H1 title (use # heading)
