@@ -2,6 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+    const { pathname } = request.nextUrl;
+
+    // Admin routes use their own cookie-based auth — skip Supabase middleware
+    if (pathname.startsWith("/admin") || pathname.startsWith("/adminlogin") || pathname.startsWith("/api/admin")) {
+        return NextResponse.next();
+    }
+
     let supabaseResponse = NextResponse.next({ request });
 
     const supabase = createServerClient(
@@ -30,8 +37,6 @@ export async function middleware(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser();
 
-    // Protect /workspace — redirect unauthenticated users to the landing page
-    const { pathname } = request.nextUrl;
     if (pathname.startsWith("/workspace") && !user) {
         const url = request.nextUrl.clone();
         url.pathname = "/";
