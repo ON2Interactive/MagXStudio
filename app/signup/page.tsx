@@ -10,12 +10,15 @@ function SignupInner() {
     const searchParams = useSearchParams();
     const hasError = searchParams.get("error") === "auth";
 
+    const next = searchParams.get("next") ?? "/workspace";
+
     const handleGoogleSignIn = async () => {
         const supabase = createClient();
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
         await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin}/auth/callback`,
+                redirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(next)}`,
             },
         });
     };

@@ -65,7 +65,7 @@ export default function PricingPage() {
                                         body: JSON.stringify({ priceId }),
                                     });
                                     if (res.status === 401) {
-                                        window.location.href = "/signup";
+                                        window.location.href = "/signup?next=/pricing";
                                         return;
                                     }
                                     const { url } = await res.json() as { url: string };
