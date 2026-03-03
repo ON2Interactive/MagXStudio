@@ -30,11 +30,11 @@ export async function middleware(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser();
 
-    // Protect /workspace — redirect unauthenticated users to /signup
+    // Protect /workspace — redirect unauthenticated users to the landing page
     const { pathname } = request.nextUrl;
     if (pathname.startsWith("/workspace") && !user) {
         const url = request.nextUrl.clone();
-        url.pathname = "/signup";
+        url.pathname = "/";
         return NextResponse.redirect(url);
     }
 
