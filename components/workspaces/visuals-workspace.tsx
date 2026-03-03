@@ -363,7 +363,7 @@ export function VisualsWorkspace({ active, userName, onSendToPages }: VisualsWor
         {assets.length === 0 ? (
           <div className="flex min-h-[calc(100vh-180px)] items-center">
             <div className="mx-auto w-full max-w-[960px]">
-              <p className={`mb-5 text-center text-[24px] leading-tight text-white/75 ${loading ? "animate-pulse" : ""}`}>Hello ({userName})</p>
+              <p className={`mb-5 text-center text-[24px] leading-tight text-white/75 ${loading ? "animate-pulse" : ""}`}>Hello {userName}</p>
               <Card className="w-full p-4 md:p-5">
                 <div className="mb-4 flex items-center gap-2 text-xs">
                   <button
