@@ -68,7 +68,8 @@ Write the full blog post now:`;
             if (!res.ok) {
                 const body = await res.text();
                 lastError = `${model}: ${res.status} ${body.slice(0, 200)}`;
-                if (res.status === 404) continue; // try next model
+                // Continue to next model on 404 (not found), 503 (overloaded), 429 (rate limited)
+                if ([404, 503, 429].includes(res.status)) continue;
                 return NextResponse.json({ error: lastError }, { status: res.status });
             }
 
