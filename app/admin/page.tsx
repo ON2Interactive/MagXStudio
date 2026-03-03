@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Trash2, X, RefreshCcw, Loader2 } from "lucide-react";
+import { Mail, Trash2, X, RefreshCcw, Loader2, ArrowUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -356,15 +356,22 @@ function BlogTab() {
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-2">
-                    <button onClick={handleGenerate} disabled={generating || !topic.trim()}
-                        className="flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition-colors disabled:opacity-40">
-                        {generating && <Loader2 className="h-4 w-4 animate-spin" />}
-                        {generating ? "Generating…" : "Generate →"}
+                <div className="flex items-center justify-between mt-4">
+                    <div className="flex-1">
+                        {generateError && (
+                            <p className="text-xs text-red-400">{generateError}</p>
+                        )}
+                    </div>
+                    <button
+                        onClick={handleGenerate}
+                        disabled={generating || !topic.trim()}
+                        className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[#111111] transition hover:bg-[#f7f8fa] disabled:text-[#5a606d] disabled:opacity-100"
+                        style={{ backgroundColor: (generating || !topic.trim()) ? "#d8dde5" : "#eef1f5" }}
+                        aria-label="Generate blog post"
+                        title="Generate blog post"
+                    >
+                        {generating ? <Loader2 className="h-[25px] w-[25px] animate-spin" /> : <ArrowUp className="h-[25px] w-[25px] stroke-[2.5]" />}
                     </button>
-                    {generateError && (
-                        <p className="text-xs text-red-400">{generateError}</p>
-                    )}
                 </div>
             </div>
 
