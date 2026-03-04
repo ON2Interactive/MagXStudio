@@ -344,24 +344,24 @@ function BlogTab() {
                 <h2 className="text-sm font-semibold text-white/90">Generate Blog Post</h2>
 
                 <Input
-                    placeholder="Topic / Title (e.g. How AI is changing web design)"
+                    placeholder="Title"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
                 />
 
                 <Input
                     type="url"
-                    placeholder="Reference URL (Optional inspiration link)"
+                    placeholder="URL"
                     value={referenceUrl}
                     onChange={(e) => setReferenceUrl(e.target.value)}
                 />
 
                 <Textarea
-                    placeholder="Specific Instructions / Context (Optional)..."
+                    placeholder="Prompt"
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
                     rows={1}
-                    className="min-h-[40px]"
+                    className="min-h-[150px]"
                 />
 
                 <div className="flex flex-col gap-3">
