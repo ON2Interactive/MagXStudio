@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Trash2, X, RefreshCcw, Loader2, ArrowUp } from "lucide-react";
+import { Mail, Trash2, X, RefreshCcw, Loader2, ArrowUp, Wand2, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -253,12 +253,32 @@ function BlogTab() {
                 setTitle(data.title);
                 setSlug(data.slug);
                 setContent(data.content);
+                setEditingId(null); // Ensure we are in "new" mode
             }
         } catch (e) {
             setGenerateError(e instanceof Error ? e.message : "Network error");
         } finally {
             setGenerating(false);
         }
+    };
+
+    const handleManualCreate = () => {
+        if (!topic.trim()) {
+            setTitle("");
+            setSlug("");
+        } else {
+            setTitle(topic);
+            const generatedSlug = topic
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, "")
+                .replace(/\s+/g, "-")
+                .slice(0, 80);
+            setSlug(generatedSlug);
+        }
+        setContent("");
+        setCoverImage("");
+        setEditingId(null);
+        setGenerateError("");
     };
 
     const handleSave = async (status: "draft" | "published") => {
@@ -362,16 +382,26 @@ function BlogTab() {
                             <p className="text-xs text-red-400">{generateError}</p>
                         )}
                     </div>
-                    <button
-                        onClick={handleGenerate}
-                        disabled={generating || !topic.trim()}
-                        className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[#111111] transition hover:bg-[#f7f8fa] disabled:text-[#5a606d] disabled:opacity-100"
-                        style={{ backgroundColor: (generating || !topic.trim()) ? "#d8dde5" : "#eef1f5" }}
-                        aria-label="Generate blog post"
-                        title="Generate blog post"
-                    >
-                        {generating ? <Loader2 className="h-[25px] w-[25px] animate-spin" /> : <ArrowUp className="h-[25px] w-[25px] stroke-[2.5]" />}
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleManualCreate}
+                            className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[#111111] transition hover:bg-[#f7f8fa] bg-[#eef1f5] border border-white/10"
+                            aria-label="Create manually"
+                            title="Create manually"
+                        >
+                            <Pencil className="h-[20px] w-[20px] stroke-[2.5]" />
+                        </button>
+                        <button
+                            onClick={handleGenerate}
+                            disabled={generating || !topic.trim()}
+                            className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[#111111] transition hover:bg-[#f7f8fa] disabled:text-[#5a606d] disabled:opacity-100"
+                            style={{ backgroundColor: (generating || !topic.trim()) ? "#d8dde5" : "#eef1f5" }}
+                            aria-label="Generate blog post"
+                            title="Generate blog post"
+                        >
+                            {generating ? <Loader2 className="h-[25px] w-[25px] animate-spin" /> : <Wand2 className="h-[25px] w-[25px] stroke-[2.5]" />}
+                        </button>
+                    </div>
                 </div>
             </div>
 
