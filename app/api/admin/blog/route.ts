@@ -18,6 +18,33 @@ function getServiceClient() {
     );
 }
 
+async function uploadImage(base64: string, slug: string) {
+    if (!base64.startsWith("data:image")) return base64;
+
+    const supabase = getServiceClient();
+    const match = base64.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+    if (!match) return base64;
+
+    const mimeType = `image/${match[1]}`;
+    const buffer = Buffer.from(match[2], "base64");
+    const fileName = `${slug}-${Date.now()}.${match[1] === "jpeg" ? "jpg" : match[1]}`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("blog_images")
+        .upload(fileName, buffer, { contentType: mimeType, upsert: true });
+
+    if (uploadError) {
+        console.error("Upload error:", uploadError);
+        return base64; // Fallback to base64 if upload fails
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+        .from("blog_images")
+        .getPublicUrl(fileName);
+
+    return publicUrl;
+}
+
 // GET all posts
 export async function GET() {
     if (!await checkAuth()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,10 +63,14 @@ export async function POST(req: Request) {
     const { title, slug, content, status, cover_image } = await req.json() as {
         title: string; slug: string; content: string; status: "draft" | "published"; cover_image?: string;
     };
+
+    // Upload image if it's base64
+    const finalCoverImage = cover_image ? await uploadImage(cover_image, slug) : null;
+
     const supabase = getServiceClient();
     const { data, error } = await supabase
         .from("blog_posts")
-        .insert({ title, slug, content, status, cover_image: cover_image ?? null, created_at: new Date().toISOString() })
+        .insert({ title, slug, content, status, cover_image: finalCoverImage, created_at: new Date().toISOString() })
         .select("id")
         .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -53,10 +84,14 @@ export async function PATCH(req: Request) {
         id: string; title: string; slug: string; content: string;
         status: "draft" | "published"; cover_image?: string;
     };
+
+    // Upload image if it's base64
+    const finalCoverImage = cover_image ? await uploadImage(cover_image, slug) : cover_image;
+
     const supabase = getServiceClient();
     const { error } = await supabase
         .from("blog_posts")
-        .update({ title, slug, content, status, cover_image: cover_image ?? null })
+        .update({ title, slug, content, status, cover_image: finalCoverImage || null })
         .eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
