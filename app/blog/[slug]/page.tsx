@@ -3,9 +3,47 @@ import { notFound } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
-type Post = { title: string; content: string; cover_image?: string; created_at: string };
+type Post = { title: string; content: string; cover_image?: string; created_at: string; slug: string };
 
 export const revalidate = 60;
+
+async function getPost(slug: string) {
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data: post } = await supabase
+        .from("blog_posts")
+        .select("title, content, cover_image, created_at, slug")
+        .eq("slug", slug)
+        .eq("status", "published")
+        .single();
+    return post as Post | null;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    const post = await getPost(slug);
+    if (!post) return {};
+
+    return {
+        title: post.title,
+        description: post.content.slice(0, 160).replace(/[#*]/g, "").trim() + "...",
+        openGraph: {
+            title: post.title,
+            description: post.content.slice(0, 160).replace(/[#*]/g, "").trim() + "...",
+            images: post.cover_image ? [{ url: post.cover_image }] : [],
+            type: "article",
+            publishedTime: post.created_at,
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: post.title,
+            description: post.content.slice(0, 160).replace(/[#*]/g, "").trim() + "...",
+            images: post.cover_image ? [post.cover_image] : [],
+        }
+    };
+}
 
 export async function generateStaticParams() {
     const supabase = createClient(
@@ -21,20 +59,11 @@ export async function generateStaticParams() {
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    const { data: post } = await supabase
-        .from("blog_posts")
-        .select("title, content, cover_image, created_at")
-        .eq("slug", slug)
-        .eq("status", "published")
-        .single();
+    const post = await getPost(slug);
 
     if (!post) notFound();
 
-    const { title, content, cover_image, created_at } = post as Post;
+    const { title, content, cover_image, created_at } = post;
     const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
     // Convert basic markdown to HTML
