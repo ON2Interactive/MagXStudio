@@ -275,7 +275,7 @@ function BlogTab() {
                 .slice(0, 80);
             setSlug(generatedSlug);
         }
-        setContent("");
+        setContent(" "); // Set to non-empty to show editor
         setCoverImage("");
         setEditingId(null);
         setGenerateError("");
