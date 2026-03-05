@@ -40,7 +40,7 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
                 setIsAdmin(true);
             }
 
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from("users")
                 .select("credits")
                 .eq("id", user.id)
@@ -48,6 +48,18 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
 
             if (data && typeof data.credits === "number") {
                 setCredits(data.credits);
+            } else if (error && error.code === "PGRST116") {
+                try {
+                    const res = await fetch("/api/user/sync", { method: "POST" });
+                    if (res.ok) {
+                        const syncData = await res.json();
+                        setCredits(syncData.credits ?? 0);
+                    } else {
+                        setCredits(0);
+                    }
+                } catch {
+                    setCredits(0);
+                }
             } else {
                 setCredits(0);
             }

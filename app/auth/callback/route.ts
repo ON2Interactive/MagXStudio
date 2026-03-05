@@ -30,7 +30,7 @@ export async function GET(request: Request) {
                 .eq("id", user.id)
                 .single();
 
-            await service.from("users").upsert(
+            const { error: upsertError } = await service.from("users").upsert(
                 {
                     id: user.id,
                     email,
@@ -41,6 +41,10 @@ export async function GET(request: Request) {
                 },
                 { onConflict: "id" }
             );
+
+            if (upsertError) {
+                console.error("Error upserting user in callback:", upsertError);
+            }
 
             // Only send emails on first sign-up (user didn't exist before)
             if (!existing && email) {

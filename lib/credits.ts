@@ -16,7 +16,34 @@ export async function checkCredits(minCredits: number = 1): Promise<{ allowed: b
         return { allowed: true, userId: user.id, isAdmin };
     }
 
-    const { data } = await supabase.from("users").select("credits").eq("id", user.id).single();
+    const { data, error } = await supabase.from("users").select("credits").eq("id", user.id).single();
+
+    if (error && error.code === "PGRST116") {
+        // User profile doesn't exist yet (signup callback may have failed or been bypassed)
+        // Lazy-create the user with 15 credits using the service role to bypass RLS
+        const serviceClient = createSupabaseClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+
+        const { error: insertError } = await serviceClient.from("users").insert({
+            id: user.id,
+            email: user.email,
+            credits: 15,
+            updated_at: new Date().toISOString(),
+        });
+
+        if (!insertError) {
+            // Successfully created, check if 15 credits is enough
+            if (15 < minCredits) {
+                return { allowed: false, error: "Insufficient credits", userId: user.id, isAdmin };
+            }
+            return { allowed: true, userId: user.id, isAdmin };
+        }
+
+        console.error("Failed to lazy-create user profile:", insertError);
+    }
+
     if (!data || typeof data.credits !== "number" || data.credits < minCredits) {
         return { allowed: false, error: "Insufficient credits", userId: user.id, isAdmin };
     }
