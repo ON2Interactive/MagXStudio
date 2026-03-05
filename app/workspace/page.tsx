@@ -8,9 +8,21 @@ import type { ReferenceImageInput } from "@/lib/types";
 import { getClientUserName, setClientUserName } from "@/lib/user-client";
 import { createClient } from "@/lib/supabase/client";
 import { SettingsModal } from "@/components/modals/SettingsModal";
-import { CreditsProvider } from "@/components/workspaces/credits-provider";
+import { CreditsProvider, useCredits } from "@/components/workspaces/credits-provider";
 
 type WorkspaceKey = "websites" | "slides" | "pages" | "visuals";
+
+function AutoOpenSettings({ onOpenSettings }: { onOpenSettings: () => void }) {
+  const { credits, isLoading } = useCredits();
+
+  useEffect(() => {
+    if (!isLoading && typeof credits === "number" && credits <= 0) {
+      onOpenSettings();
+    }
+  }, [credits, isLoading, onOpenSettings]);
+
+  return null;
+}
 
 const workspaces: Array<{ key: WorkspaceKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { key: "websites", label: "Site Design", icon: Globe },
@@ -84,6 +96,8 @@ export default function HomePage() {
       </header>
 
       <CreditsProvider>
+        <AutoOpenSettings onOpenSettings={openSettings} />
+
         <AppWorkspace
           kind="websites"
           userName={userName}
