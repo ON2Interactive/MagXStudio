@@ -25,6 +25,31 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const supabase = createClient();
         let userId: string | null = null;
+        let isMounted = true;
+
+        const syncCredits = async () => {
+            try {
+                const {
+                    data: { session }
+                } = await supabase.auth.getSession();
+                const accessToken = session?.access_token;
+
+                const res = await fetch("/api/user/sync", {
+                    method: "POST",
+                    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined
+                });
+                if (!isMounted) return;
+                if (res.ok) {
+                    const syncData = await res.json();
+                    if (!isMounted) return;
+                    setCredits(syncData.credits ?? 0);
+                } else {
+                    setCredits(0);
+                }
+            } catch {
+                if (isMounted) setCredits(0);
+            }
+        };
 
         const init = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -40,21 +65,19 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
                 setIsAdmin(true);
             }
 
-            try {
-                const res = await fetch("/api/user/sync", { method: "POST" });
-                if (res.ok) {
-                    const syncData = await res.json();
-                    setCredits(syncData.credits ?? 0);
-                } else {
-                    setCredits(0);
-                }
-            } catch {
-                setCredits(0);
-            }
+            await syncCredits();
             setIsLoading(false);
         };
 
         init();
+
+        const intervalId = window.setInterval(syncCredits, 5000);
+        const onVisible = () => {
+            if (document.visibilityState === "visible") {
+                syncCredits();
+            }
+        };
+        document.addEventListener("visibilitychange", onVisible);
 
         const channel = supabase
             .channel("schema-db-changes")
@@ -74,6 +97,9 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
             .subscribe();
 
         return () => {
+            isMounted = false;
+            window.clearInterval(intervalId);
+            document.removeEventListener("visibilitychange", onVisible);
             supabase.removeChannel(channel);
         };
     }, []);

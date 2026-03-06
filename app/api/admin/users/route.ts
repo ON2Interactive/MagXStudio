@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
+const DEFAULT_TRIAL_CREDITS = 15;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "kipme001@gmail.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "MagXStudio@$@$";
 const SESSION_TOKEN = Buffer.from(`${ADMIN_EMAIL}:${ADMIN_PASSWORD}`).toString("base64");
@@ -39,12 +40,18 @@ export async function GET() {
 
     const rows = users.map((u) => {
         const sub = subMap.get(u.id);
+        const trialCredits =
+            typeof u.user_metadata?.trial_credits === "number" &&
+                Number.isFinite(u.user_metadata?.trial_credits as number) &&
+                (u.user_metadata?.trial_credits as number) >= 0
+                ? (u.user_metadata?.trial_credits as number)
+                : DEFAULT_TRIAL_CREDITS;
         return {
             id: u.id,
             email: u.email ?? "",
             username: (u.user_metadata?.full_name as string | undefined) ?? "",
-            credits: (sub?.credits as number | undefined) ?? 0,
-            status: (sub?.status as string | undefined) ?? "inactive",
+            credits: (sub?.credits as number | undefined) ?? trialCredits,
+            status: (sub?.status as string | undefined) ?? "trial",
             created: u.created_at,
         };
     });
@@ -66,16 +73,38 @@ export async function PUT(req: Request) {
 
     const supabase = getServiceClient();
 
-    // Update display name in auth metadata
-    await supabase.auth.admin.updateUserById(id, {
-        user_metadata: { full_name: username },
-    });
+    const { data: existingUser, error: existingUserError } = await supabase.auth.admin.getUserById(id);
+    if (existingUserError || !existingUser?.user) {
+        return NextResponse.json({ error: existingUserError?.message ?? "Failed to fetch user" }, { status: 500 });
+    }
 
-    // Upsert credits in subscriptions
-    await supabase.from("subscriptions").upsert(
-        { user_id: id, credits, updated_at: new Date().toISOString() },
-        { onConflict: "user_id" }
-    );
+    const { data: existingSub } = await supabase
+        .from("subscriptions")
+        .select("user_id")
+        .eq("user_id", id)
+        .single();
+
+    const userMetadata = existingUser.user.user_metadata ?? {};
+    const { error: metadataUpdateError } = await supabase.auth.admin.updateUserById(id, {
+        user_metadata: {
+            ...userMetadata,
+            full_name: username,
+            ...(existingSub ? {} : { trial_credits: credits }),
+        },
+    });
+    if (metadataUpdateError) {
+        return NextResponse.json({ error: metadataUpdateError.message }, { status: 500 });
+    }
+
+    if (existingSub) {
+        const { error: subUpdateError } = await supabase
+            .from("subscriptions")
+            .update({ credits, updated_at: new Date().toISOString() })
+            .eq("user_id", id);
+        if (subUpdateError) {
+            return NextResponse.json({ error: subUpdateError.message }, { status: 500 });
+        }
+    }
 
     return NextResponse.json({ ok: true });
 }
