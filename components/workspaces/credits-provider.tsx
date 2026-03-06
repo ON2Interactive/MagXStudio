@@ -85,12 +85,13 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
                 "postgres_changes",
                 { event: "*", schema: "public", table: "subscriptions" },
                 (payload) => {
+                    const nextRow = payload.new as { credits?: unknown; user_id?: unknown } | null;
                     if (
-                        payload.new &&
-                        typeof payload.new.credits === "number" &&
-                        payload.new.user_id === userId
+                        nextRow &&
+                        typeof nextRow.credits === "number" &&
+                        nextRow.user_id === userId
                     ) {
-                        setCredits(payload.new.credits);
+                        setCredits(nextRow.credits);
                     }
                 }
             )
