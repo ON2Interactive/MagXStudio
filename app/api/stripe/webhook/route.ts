@@ -112,19 +112,19 @@ export async function POST(req: Request) {
 
                     if (hasTopUp) {
                         const { data: userData } = await supabase
-                            .from("users")
+                            .from("subscriptions")
                             .select("credits")
-                            .eq("id", session.client_reference_id)
+                            .eq("user_id", session.client_reference_id)
                             .single();
 
                         const currentCredits = userData?.credits ?? 0;
                         await supabase
-                            .from("users")
+                            .from("subscriptions")
                             .update({
                                 credits: currentCredits + TOP_UP_CREDIT_AMOUNT,
                                 updated_at: new Date().toISOString()
                             })
-                            .eq("id", session.client_reference_id);
+                            .eq("user_id", session.client_reference_id);
 
                         console.log(`[Stripe Webhook] Granted ${TOP_UP_CREDIT_AMOUNT} credits to user ${session.client_reference_id} via Top-up Pack`);
                     }
@@ -177,19 +177,19 @@ export async function POST(req: Request) {
 
                     if (subData?.user_id) {
                         const { data: userData } = await supabase
-                            .from("users")
+                            .from("subscriptions")
                             .select("credits")
-                            .eq("id", subData.user_id)
+                            .eq("user_id", subData.user_id)
                             .single();
 
                         const currentCredits = userData?.credits ?? 0;
                         await supabase
-                            .from("users")
+                            .from("subscriptions")
                             .update({
                                 credits: currentCredits + SUBSCRIPTION_CREDIT_AMOUNT,
                                 updated_at: new Date().toISOString()
                             })
-                            .eq("id", subData.user_id);
+                            .eq("user_id", subData.user_id);
 
                         console.log(`[Stripe Webhook] Granted ${SUBSCRIPTION_CREDIT_AMOUNT} credits to user ${subData.user_id} for subscription ${subscriptionId}`);
                     }

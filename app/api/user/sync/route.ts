@@ -18,20 +18,24 @@ export async function POST() {
         );
 
         const { data, error } = await serviceClient
-            .from("users")
+            .from("subscriptions")
             .select("credits")
-            .eq("id", user.id)
+            .eq("user_id", user.id)
             .single();
 
         if (error && error.code === "PGRST116") {
             // Missing user (OAuth redirect likely bypassed callback)
             // 1. Create with 15 credits
-            await serviceClient.from("users").insert({
-                id: user.id,
-                email: user.email,
+            const { error: insertError } = await serviceClient.from("subscriptions").insert({
+                user_id: user.id,
+                status: "trial",
                 credits: 15,
                 updated_at: new Date().toISOString(),
             });
+            if (insertError) {
+                console.error("User sync insert failed:", insertError);
+                return NextResponse.json({ error: "Failed to create user credits" }, { status: 500 });
+            }
 
             // 2. Send the missing welcome emails
             const email = user.email ?? "";
@@ -44,6 +48,11 @@ export async function POST() {
             }
 
             return NextResponse.json({ credits: 15 });
+        }
+
+        if (error) {
+            console.error("User sync fetch failed:", error);
+            return NextResponse.json({ error: "Failed to fetch user credits" }, { status: 500 });
         }
 
         return NextResponse.json({ credits: data?.credits ?? 0 });

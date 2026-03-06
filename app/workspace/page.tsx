@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Globe, Image, LayoutPanelTop, Presentation, Settings } from "lucide-react";
 import { AppWorkspace } from "@/components/workspaces/app-workspace";
 import { VisualsWorkspace } from "@/components/workspaces/visuals-workspace";
@@ -14,11 +14,18 @@ type WorkspaceKey = "websites" | "slides" | "pages" | "visuals";
 
 function AutoOpenSettings({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { credits, isLoading } = useCredits();
+  const hasAutoOpenedRef = useRef(false);
 
   useEffect(() => {
-    if (!isLoading && typeof credits === "number" && credits <= 0) {
-      onOpenSettings();
+    if (isLoading || typeof credits !== "number") return;
+    if (credits <= 0) {
+      if (!hasAutoOpenedRef.current) {
+        hasAutoOpenedRef.current = true;
+        onOpenSettings();
+      }
+      return;
     }
+    hasAutoOpenedRef.current = false;
   }, [credits, isLoading, onOpenSettings]);
 
   return null;
